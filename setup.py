@@ -4,19 +4,19 @@ with open('README.md', 'r', encoding='utf-8') as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name='example_pypi_package',
-    author='Tom Chen',
-    author_email='tomchen.org@gmail.com',
-    description='Example PyPI (Python Package Index) Package',
-    keywords='example, pypi, package',
+    name='revonto',
+    author='Vladimir Smrkolj & Aljoša Škorjanc',
+    author_email='todo',
+    description='Python library for Gene Ontology Reverse Lookup',
+    keywords='gene ontology, python, reverse lookup',
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url='https://github.com/tomchen/example_pypi_package',
+    url='https://github.com/ladismrkolj/revonto',
     project_urls={
-        'Documentation': 'https://github.com/tomchen/example_pypi_package',
+        'Documentation': 'https://github.com/ladismrkolj/revonto',
         'Bug Reports':
-        'https://github.com/tomchen/example_pypi_package/issues',
-        'Source Code': 'https://github.com/tomchen/example_pypi_package',
+        'https://github.com/ladismrkolj/revonto/issues',
+        'Source Code': 'https://github.com/ladismrkolj/revonto',
         # 'Funding': '',
         # 'Say Thanks!': '',
     },
@@ -30,15 +30,14 @@ setuptools.setup(
         'Topic :: Software Development :: Build Tools',
 
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3 :: Only',
-        'License :: OSI Approved :: MIT License',
+        'License :: OSI Approved :: GPL-3.0 License',
         'Operating System :: OS Independent',
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     # install_requires=['Pillow'],
     extras_require={
         'dev': ['check-manifest'],
@@ -46,8 +45,8 @@ setuptools.setup(
     },
     # entry_points={
     #     'console_scripts': [  # This can provide executable scripts
-    #         'run=examplepy:main',
-    # You can execute `run` in bash to run `main()` in src/examplepy/__init__.py
+    #         'run=revonto:main',
+    # You can execute `run` in bash to run `main()` in src/revonto/__init__.py
     #     ],
     # },
 )
