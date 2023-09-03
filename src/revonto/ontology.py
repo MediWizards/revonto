@@ -1,7 +1,9 @@
 """Read and store Gene Ontology's obo file."""
 # -*- coding: UTF-8 -*-
 import os
-
+from typing import TYPE_CHECKING, Set, Dict
+#if TYPE_CHECKING:
+#    from .Metrics import Metrics, basic_mirna_score
 
 class OBOReader(object):
     """Read goatools.org's obo file. Load into this iterable class.
@@ -14,10 +16,10 @@ class OBOReader(object):
     """
 
     # Scalar attributes for Typedefs:
-    #                    'is_class_level', 'is_metadata_tag',
+    #                    'is_class_height', 'is_metadata_tag',
     #                    'is_transitive', 'transitive_over'])
 
-    def __init__(self, obo_file="go-basic.obo", optional_attrs=None):
+    def __init__(self, obo_file="go-basic.obo"):
         """Read obo file. Load dictionary."""
         self.format_version = None  # e.g., "1.2" of "format-version:" line
         self.data_version = (
@@ -97,22 +99,25 @@ class OBOReader(object):
         #   def: "The maintenance of ...
         #   is_a: GO:0007005 ! mitochondrion organization
         if line[:4] == "id: ":
-            assert not rec_curr.item_id
-            item_id = line[4:]
-            rec_curr.item_id = item_id
-            rec_curr.id = item_id
+            assert not rec_curr.term_id
+            term_id = line[4:]
+            rec_curr.term_id = term_id
+            rec_curr.id = term_id
         elif line[:8] == "alt_id: ":
             rec_curr.alt_ids.add(line[8:])
         elif line[:6] == "name: ":
             assert not rec_curr.name
             rec_curr.name = line[6:]
+        elif line[:5] == "def: ":
+            rec_curr.description = line[5:] 
         elif line[:11] == "namespace: ":
             rec_curr.namespace = line[11:]
-        elif line[:6] == "is_a: ":
+        elif line[:6] == "is_a: ": #based on https://geneontology.org/docs/ontology-relations/ "is_a" or "part_of" can be safely used as group annotations
             rec_curr._parents.add(line[6:].split()[0])
+        elif line[:22] == "relationship: part_of ":
+            rec_curr._parents.add(line[22:].split()[0])
         elif line[:13] == "is_obsolete: " and line[13:] == "true":
             rec_curr.is_obsolete = True
-
 
 class GOTerm(object):
     """
@@ -120,26 +125,29 @@ class GOTerm(object):
     """
 
     def __init__(self):
-        self.item_id = ""  # GO:NNNNNNN
+        self.term_id = ""  # GO:NNNNNNN
         self.name = ""  # description
+        self.description = ""
         self.namespace = "default"  # BP, CC, MF
         self._parents = set()  # is_a basestring of parents
-        self.parents = set()  # parent records
-        self.children = set()  # children records
+        self.parents: Set[GOTerm] = set()  # direct parent records
+        self.children: Set[GOTerm] = set()  # direct children records
         self.is_obsolete = False  # is_obsolete
         self.alt_ids = set()  # alternative identifiers
+        self.height = None
+        self.depth = None
 
     def has_parent(self, term):
         """Return True if this GO object has a parent GO ID."""
         for parent in self.parents:
-            if parent.item_id == term or parent.has_parent(term):
+            if parent.term_id == term or parent.has_parent(term):
                 return True
         return False
 
     def has_child(self, term):
         """Return True if this GO object has a child GO ID."""
         for parent in self.children:
-            if parent.item_id == term or parent.has_child(term):
+            if parent.term_id == term or parent.has_child(term):
                 return True
         return False
 
@@ -147,29 +155,34 @@ class GOTerm(object):
         """Return all parent GO IDs."""
         all_parents = set()
         for parent in self.parents:
-            all_parents.add(parent.item_id)
+            all_parents.add(parent.term_id)
             all_parents |= parent.get_all_parents()
         return all_parents
+    
+    def get_all_children(self):
+        """Return all child GO IDs."""
+        all_children = set()
+        for child in self.children:
+            all_children.add(child.term_id)
+            all_children |= child.get_all_children()
+        return all_children
 
-
-class GODag(dict):
+class GODag(dict[str, GOTerm]):
     """Holds the GO DAG as a dict."""
 
     # pylint: disable=line-too-long
     def __init__(
         self,
         obo_file="go-basic.obo",
-        optional_attrs=None,
         load_obsolete=False,
     ):
-        super(GODag, self).__init__()
+        super().__init__()
         self.version, self.data_version = self.load_obo_file(
-            obo_file, optional_attrs, load_obsolete, prt
-        )
+            obo_file, load_obsolete)
 
-    def load_obo_file(self, obo_file, optional_attrs, load_obsolete, prt):
+    def load_obo_file(self, obo_file, load_obsolete):
         """Read obo file. Store results."""
-        reader = OBOReader(obo_file, optional_attrs)
+        reader = OBOReader(obo_file)
 
         # Save alt_ids and their corresponding main GO ID. Add to GODag after populating GO Terms
         alt2rec = {}
@@ -178,23 +191,18 @@ class GODag(dict):
             #   1) Argument load_obsolete is True OR
             #   2) Argument load_obsolete is False and the GO term is "live" (not obsolete)
             if load_obsolete or not rec.is_obsolete:
-                self[rec.item_id] = rec
+                self[rec.term_id] = rec
                 for alt in rec.alt_ids:
                     alt2rec[alt] = rec
 
-        # Save the typedefs and parsed optional_attrs
-        # self.optobj = reader.optobj
-        self.typedefs = reader.typedefs
-
-        self._populate_terms(reader.optobj)
-        self._set_level_depth()
+        self._populate_terms()
+        self._set_height_depth()
 
         # Add alt_ids to go2obj
         for goid_alt, rec in alt2rec.items():
             self[goid_alt] = rec
         desc = self._str_desc(reader)
-        if prt:
-            prt.write("{DESC}\n".format(DESC=desc))
+
         return desc, reader.data_version
 
     def _str_desc(self, reader):
@@ -208,17 +216,11 @@ class GODag(dict):
             REL=data_version,
             N=len(self),
         )
-        if reader.optobj:
-            desc = "{D}; optional_attrs({A})".format(
-                D=desc, A=" ".join(sorted(reader.optobj.optional_attrs))
-            )
         return desc
 
-    def _populate_terms(self, optobj):
+    def _populate_terms(self):
         """Convert GO IDs to GO Term record objects. Populate children."""
-        has_relationship = (
-            optobj is not None and "relationship" in optobj.optional_attrs
-        )
+
         # Make parents and relationships references to the actual GO terms.
         for rec in self.values():
             # Given parent GO IDs, set parent GO Term objects
@@ -228,32 +230,18 @@ class GODag(dict):
             for parent_rec in rec.parents:
                 parent_rec.children.add(rec)
 
-            if has_relationship:
-                self._populate_relationships(rec)
+    def _set_height_depth(self):
+        """Set height, depth and add inverted relationships."""
 
-    def _populate_relationships(self, rec_curr):
-        """Convert GO IDs in relationships to GO Term record objects. Populate children."""
-        for relationship_type, goids in rec_curr.relationship.items():
-            parent_recs = set(self[goid] for goid in goids)
-            rec_curr.relationship[relationship_type] = parent_recs
-            for parent_rec in parent_recs:
-                if relationship_type not in parent_rec.relationship_rev:
-                    parent_rec.relationship_rev[relationship_type] = set([rec_curr])
+        def _init_height(rec: GOTerm):
+            if rec.height is None:
+                if rec.children:
+                    rec.height = max(_init_height(rec) for rec in rec.children) + 1
                 else:
-                    parent_rec.relationship_rev[relationship_type].add(rec_curr)
+                    rec.height = 0
+            return rec.height
 
-    def _set_level_depth(self):
-        """Set level, depth and add inverted relationships."""
-
-        def _init_level(rec):
-            if rec.level is None:
-                if rec.parents:
-                    rec.level = min(_init_level(rec) for rec in rec.parents) + 1
-                else:
-                    rec.level = 0
-            return rec.level
-
-        def _init_depth(rec):
+        def _init_depth(rec: GOTerm):
             if rec.depth is None:
                 if rec.parents:
                     rec.depth = max(_init_depth(rec) for rec in rec.parents) + 1
@@ -261,47 +249,13 @@ class GODag(dict):
                     rec.depth = 0
             return rec.depth
 
-        #### MOVED TO goatools/godag/reldepth.py:
-        #### def _init_reldepth(rec):
-        ####     if not hasattr(rec, 'reldepth'):
-        ####         up_terms = rec.get_goterms_upper()
-        ####         if up_terms:
-        ####             rec.reldepth = max(_init_reldepth(rec) for rec in up_terms) + 1
-        ####         else:
-        ####             rec.reldepth = 0
-        ####     return rec.reldepth
-
         for rec in self.values():
 
-            #### MOVED TO goatools/godag/reldepth.py:
-            #### # Add invert relationships
-            #### if has_relationship:
-            ####     if rec.depth is None:
-            ####         _init_reldepth(rec)
-
-            ####     # print("BBBBBBBBBBB1", rec.item_id, rec.relationship)
-            ####     #for (typedef, terms) in rec.relationship.items():
-            ####     #    invert_typedef = self.typedefs[typedef].inverse_of
-            ####     #    # print("BBBBBBBBBBB2 {} ({}) ({}) ({})".format(
-            ####     #    #    rec.item_id, rec.relationship, typedef, invert_typedef))
-            ####     #    if invert_typedef:
-            ####     #        # Add inverted relationship
-            ####     #        for term in terms:
-            ####     #            if not hasattr(term, 'relationship'):
-            ####     #                term.relationship = defaultdict(set)
-            ####     #            term.relationship[invert_typedef].add(rec)
-            ####     # print("BBBBBBBBBBB3", rec.item_id, rec.relationship)
-
-            if rec.level is None:
-                _init_level(rec)
+            if rec.height is None:
+                _init_height(rec)
 
             if rec.depth is None:
                 _init_depth(rec)
-
-    def write_dag(self, out=stdout):
-        """Write info for all GO Terms in obo file, sorted numerically."""
-        for rec in sorted(self.values()):
-            print(rec, file=out)
 
     @staticmethod
     def id2int(go_id):
@@ -311,230 +265,16 @@ class GODag(dict):
     def query_term(self, term, verbose=False):
         """Given a GO ID, return GO object."""
         if term not in self:
-            stderr.write("Term %s not found!\n" % term)
+            #logging
             return None
 
         rec = self[term]
         if verbose:
             print(rec)
-            stderr.write("all parents: {}\n".format(repr(rec.get_all_parents())))
-            stderr.write("all children: {}\n".format(repr(rec.get_all_children())))
+            #logging
+            #stderr.write("all parents: {}\n".format(repr(rec.get_all_parents())))
+            #stderr.write("all children: {}\n".format(repr(rec.get_all_children())))
         return rec
-
-    def paths_to_top(self, term):
-        """Returns all possible paths to the root node
-
-        Each path includes the term given. The order of the path is
-        top -> bottom, i.e. it starts with the root and ends with the
-        given term (inclusively).
-
-        Parameters:
-        -----------
-        - term:
-            the ID of the GO term, where the paths begin (i.e. the
-            accession 'GO:0003682')
-
-        Returns:
-        --------
-        - a list of lists of GO Terms
-        """
-        # error handling consistent with original authors
-        if term not in self:
-            stderr.write("Term %s not found!\n" % term)
-            return
-
-        def _paths_to_top_recursive(rec):
-            if rec.level == 0:
-                return [[rec]]
-            paths = []
-            for parent in rec.parents:
-                top_paths = _paths_to_top_recursive(parent)
-                for top_path in top_paths:
-                    top_path.append(rec)
-                    paths.append(top_path)
-            return paths
-
-        go_term = self[term]
-        return _paths_to_top_recursive(go_term)
-
-    def label_wrap(self, label):
-        """Label text for plot."""
-        wrapped_label = r"%s\n%s" % (label, self[label].name.replace(",", r"\n"))
-        return wrapped_label
-
-    def make_graph_pydot(
-        self,
-        recs,
-        nodecolor,
-        edgecolor,
-        dpi,
-        format="png",
-        draw_parents=True,
-        draw_children=True,
-    ):
-        """draw AMIGO style network, lineage containing one query record."""
-        import pydot
-
-        # [#179]: "plot_go_term is not work well if format is svg" due to:
-        # https://github.com/sverweij/atom-graphviz-preview-plus/issues/18
-        if format == "svg":
-            dpi = 72
-        grph = pydot.Dot(graph_type="digraph", dpi=str(dpi))
-        edgeset = set()
-        usr_ids = [rec.item_id for rec in recs]
-        for rec in recs:
-            if draw_parents:
-                edgeset.update(rec.get_all_parent_edges())
-            if draw_children:
-                edgeset.update(rec.get_all_child_edges())
-
-        rec_id_set = set(rec_id for endpts in edgeset for rec_id in endpts)
-        nodes = {
-            str(ID): pydot.Node(
-                self.label_wrap(ID).replace("GO:", ""),  # Node name
-                shape="box",
-                style="rounded, filled",
-                # Highlight query terms in plum:
-                fillcolor="beige" if ID not in usr_ids else "plum",
-                color=nodecolor,
-            )
-            for ID in rec_id_set
-        }
-
-        # add nodes explicitly via add_node
-        for node in nodes.values():
-            grph.add_node(node)
-
-        for src, target in edgeset:
-            # default layout in graphviz is top->bottom, so we invert
-            # the direction and plot using dir="back"
-            grph.add_edge(
-                pydot.Edge(
-                    nodes[target],
-                    nodes[src],
-                    shape="normal",
-                    color=edgecolor,
-                    label="is_a",
-                    dir="back",
-                )
-            )
-
-        return grph
-
-    def make_graph_pygraphviz(
-        self,
-        recs,
-        nodecolor,
-        edgecolor,
-        dpi,
-        format="png",
-        draw_parents=True,
-        draw_children=True,
-    ):
-        """Draw AMIGO style network, lineage containing one query record."""
-        import pygraphviz as pgv
-
-        grph = pgv.AGraph(name="GO tree")
-
-        edgeset = set()
-        for rec in recs:
-            if draw_parents:
-                edgeset.update(rec.get_all_parent_edges())
-            if draw_children:
-                edgeset.update(rec.get_all_child_edges())
-
-        edgeset = [(self.label_wrap(a), self.label_wrap(b)) for (a, b) in edgeset]
-
-        # add nodes explicitly via add_node
-        # adding nodes implicitly via add_edge misses nodes
-        # without at least one edge
-        for rec in recs:
-            grph.add_node(self.label_wrap(rec.item_id))
-
-        for src, target in edgeset:
-            # default layout in graphviz is top->bottom, so we invert
-            # the direction and plot using dir="back"
-            grph.add_edge(target, src)
-
-        # [#179]: "plot_go_term is not work well if format is svg" due to:
-        # https://github.com/sverweij/atom-graphviz-preview-plus/issues/18
-        if format != "svg":
-            grph.graph_attr.update(dpi=str(dpi))
-        grph.node_attr.update(
-            shape="box", style="rounded,filled", fillcolor="beige", color=nodecolor
-        )
-        grph.edge_attr.update(shape="normal", color=edgecolor, dir="back", label="is_a")
-        # highlight the query terms
-        for rec in recs:
-            try:
-                node = grph.get_node(self.label_wrap(rec.item_id))
-                node.attr.update(fillcolor="plum")
-            except KeyError:
-                continue
-
-        return grph
-
-    def draw_lineage(
-        self,
-        recs,
-        nodecolor="mediumseagreen",
-        edgecolor="lightslateblue",
-        dpi=96,
-        output="GO_lineage.png",
-        engine="pygraphviz",
-        gml=False,
-        draw_parents=True,
-        draw_children=True,
-    ):
-        """Draw GO DAG subplot."""
-        assert engine in GraphEngines
-        grph = None
-        basename, format = output.rsplit(".", 1)
-        if engine == "pygraphviz":
-            grph = self.make_graph_pygraphviz(
-                recs,
-                nodecolor,
-                edgecolor,
-                dpi,
-                format=format,
-                draw_parents=draw_parents,
-                draw_children=draw_children,
-            )
-            grph.draw(output, prog="dot")
-        else:
-            grph = self.make_graph_pydot(
-                recs,
-                nodecolor,
-                edgecolor,
-                dpi,
-                format=format,
-                draw_parents=draw_parents,
-                draw_children=draw_children,
-            )
-            grph.write(output, format=format)
-
-        if gml:
-            import networkx as nx  # use networkx to do the conversion
-
-            obj = (
-                nx.nx_agraph.from_agraph(grph)
-                if engine == "pygraphviz"
-                else nx.nx_pydot.from_pydot(grph)
-            )
-
-            # del obj.graph['node']
-            # del obj.graph['edge']
-            gmlfile = basename + ".gml"
-            nx.write_gml(obj, gmlfile)
-            stderr.write("GML graph written to {0}\n".format(gmlfile))
-
-        stderr.write(
-            (
-                "lineage info for terms {} written to {}\n".format(
-                    [rec.item_id for rec in recs], output
-                )
-            )
-        )
 
     def update_association(self, association):
         """Add the GO parents of a gene's associated GO IDs to the gene's association."""
@@ -551,11 +291,13 @@ class GODag(dict):
             # Add the GO parents of all GO IDs in the current gene's association
             goids.update(parents)
         if bad_goids:
-            stdout.write(
-                "{N} GO IDs in assc. are not found in the GO-DAG: {GOs}\n".format(
-                    N=len(bad_goids), GOs=" ".join(bad_goids)
-                )
-            )
+            return None #remove
+            #logging
+            #stdout.write(
+            #    "{N} GO IDs in assc. are not found in the GO-DAG: {GOs}\n".format(
+            #        N=len(bad_goids), GOs=" ".join(bad_goids)
+            #    )
+            #)
 
 
 # Copyright (C) 2010-2018, H Tang et al., All rights reserved.

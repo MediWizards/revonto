@@ -22,12 +22,13 @@ classifiers = [
 ]
 
 dependencies = [
+    "numpy",
 ]
 
 dynamic = ["version"]
 
 [tool.setuptools.dynamic]
-version = {attr = "revonto.VERSION"}
+version = {attr = "revonto.__version__"}
 
 #[project.optional-dependencies]
 #gui = ["PyQt5"]
