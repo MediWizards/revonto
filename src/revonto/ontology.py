@@ -1,7 +1,7 @@
 """Read and store Gene Ontology's obo file."""
 # -*- coding: UTF-8 -*-
 import os
-from typing import TYPE_CHECKING, Set, Dict
+from typing import TYPE_CHECKING, Set, Optional
 #if TYPE_CHECKING:
 #    from .Metrics import Metrics, basic_mirna_score
 
@@ -134,8 +134,8 @@ class GOTerm(object):
         self.children: Set[GOTerm] = set()  # direct children records
         self.is_obsolete = False  # is_obsolete
         self.alt_ids = set()  # alternative identifiers
-        self.height = None
-        self.depth = None
+        self.height: Optional[int] = None
+        self.depth: Optional[int] = None
 
     def has_parent(self, term):
         """Return True if this GO object has a parent GO ID."""
@@ -233,7 +233,7 @@ class GODag(dict[str, GOTerm]):
     def _set_height_depth(self):
         """Set height, depth and add inverted relationships."""
 
-        def _init_height(rec: GOTerm):
+        def _init_height(rec: GOTerm) -> int:
             if rec.height is None:
                 if rec.children:
                     rec.height = max(_init_height(rec) for rec in rec.children) + 1
@@ -241,7 +241,7 @@ class GODag(dict[str, GOTerm]):
                     rec.height = 0
             return rec.height
 
-        def _init_depth(rec: GOTerm):
+        def _init_depth(rec: GOTerm) -> int:
             if rec.depth is None:
                 if rec.parents:
                     rec.depth = max(_init_depth(rec) for rec in rec.parents) + 1
