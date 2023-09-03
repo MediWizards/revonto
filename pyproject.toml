@@ -10,7 +10,7 @@ authors = [
 ]
 description = "Python library for Gene Ontology Reverse Lookup"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.9"
 keywords = ["gene ontology", "reverse lookup"]
 license = {text = "GPL-3.0 License"}
 classifiers = [
