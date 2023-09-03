@@ -1,6 +1,6 @@
 # Example PyPI (Python Package Index) Package & Tutorial / Instruction / Workflow for 2021
 
-[![PyPI package](https://img.shields.io/badge/pip%20install-example--pypi--package-brightgreen)](https://pypi.org/project/example-pypi-package/) [![version number](https://img.shields.io/pypi/v/example-pypi-package?color=green&label=version)](https://github.com/tomchen/example_pypi_package/releases) [![Actions Status](https://github.com/tomchen/example_pypi_package/workflows/Test/badge.svg)](https://github.com/tomchen/example_pypi_package/actions) [![License](https://img.shields.io/github/license/tomchen/example_pypi_package)](https://github.com/tomchen/example_pypi_package/blob/main/LICENSE)
+[![PyPI package](https://img.shields.io/badge/pip%20install-example--pypi--package-brightgreen)](https://pypi.org/project/example-pypi-package/) [![version number](https://img.shields.io/github/v/release/ladismrkolj/revonto)](https://github.com/ladismrkolj/revonto/releases) [![Actions Status](https://img.shields.io/github/actions/workflow/status/ladismrkolj/revonto/test.yml)](https://github.com/ladismrkolj/revonto/actions) [![License](https://img.shields.io/github/license/ladismrkolj/revonto)](https://github.com/ladismrkolj/revonto/blob/main/LICENSE)
 
 Create venv with VSC, pip install tox, then tox -r to test. Add dependancies to pyproject.toml. Update check-manifest --ignore in tox.ini if you add non library related files to the root (not recommended). 
 

@@ -1,4 +1,7 @@
-"""Read and store Gene Ontology's obo file."""
+"""
+Read and store Gene Ontology's obo file.
+Part of code has been taken from H Tang et al. 2018 (https://github.com/tanghaibao/goatools)
+"""
 # -*- coding: UTF-8 -*-
 import os
 from typing import TYPE_CHECKING, Set, Optional
@@ -300,4 +303,3 @@ class GODag(dict[str, GOTerm]):
             #)
 
 
-# Copyright (C) 2010-2018, H Tang et al., All rights reserved.
