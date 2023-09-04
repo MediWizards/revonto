@@ -23,6 +23,7 @@ classifiers = [
 
 dependencies = [
     "numpy",
+    "scipy",
 ]
 
 dynamic = ["version"]
@@ -30,7 +31,10 @@ dynamic = ["version"]
 [tool.setuptools.dynamic]
 version = {attr = "revonto.__version__"}
 
-#[project.optional-dependencies]
+[project.optional-dependencies]
+test = [
+    "pytest"
+]
 #gui = ["PyQt5"]
 #cli = [
 #  "rich",
