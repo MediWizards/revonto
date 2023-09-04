@@ -1,32 +1,68 @@
-import numpy as np
+"""Options for calculating uncorrected p-values."""
 
-class MultiCorrectionFactory():
-    """Factory for choosing a multiple testing correction function."""
+from typing import Literal
+
+class PvalueCalcBase():
+    """Base class for calculating p-value"""
+
+    def __init__(self, pval_fnc) -> None:
+        self.pval_fnc = pval_fnc
+
+    def calc_pvalue(self, study_count: int, study_n: int, pop_count: int, pop_n: int) -> float:
+        """pvalues are calculated in derived classes"""
+        raise NotImplementedError("Must be called from derived classes")
+
+class FisherScipyStats(PvalueCalcBase):
+    """Fisher exact test"""
+
+    def __init__(self) -> None:
+        from scipy import stats
+        super().__init__(stats.fisher_exact)
+
+    def calc_pvalue(self, study_count, study_n, pop_count, pop_n):
+        """Calculate uncorrected pvalues."""
+        #               YES       NO
+        # study_genes    a scnt   b    | a+b = study_n
+        # not s_genes    c        d    |  c+d
+        #             --------   -----
+        #   pop_genes  a+c pcnt   b+d  a+b+c+d = pop_n
+
+        avar = study_count
+        bvar = study_n - study_count
+        cvar = pop_count - study_count
+        dvar = pop_n - pop_count - bvar
+        if cvar < 0: raise ValueError(f"STUDY={avar}/{bvar} POP={cvar}/{dvar} scnt({study_count}) stot({study_n}) pcnt({pop_count}) ptot({pop_n})")
+        _, p_uncorrected = self.pval_fnc([[avar, bvar], [cvar, dvar]])
+        return p_uncorrected
     
-class _AbstractCorrection():
-    """Base class for local multiple test correction calculations."""
-    def __init__(self, pvals, a=.05):
-        self.pvals = self.corrected_pvals = np.array(pvals)
-        self.n = len(self.pvals)    # number of multiple tests
-        self.a = a                  # type-1 error cutoff for each test
+class BinomialScipyStats(PvalueCalcBase):
+    """Binomial test"""
 
-        self.set_correction()
-        # Reset all pvals > 1 to 1
-        self.corrected_pvals[self.corrected_pvals > 1] = 1
+    def __init__(self) -> None:
+        from scipy import stats
+        super().__init__(stats.binomtest)
 
-    def set_correction(self):
-        # the purpose of multiple correction is to lower the alpha
-        # instead of the canonical value (like .05)
-        pass
+    def calc_pvalue(self, study_count, study_n, pop_count, pop_n):
+        """Calculate uncorrected pvalues."""
+        k = study_count
+        n = study_n
+        p = pop_count/pop_n
+        if pop_n == 0: raise ZeroDivisionError(f"pop_n is equal to zero")
+        p_uncorrected = self.pval_fnc(k, n, p).pvalue
+        return p_uncorrected
+
+class PValueFactory():
+    """Factory for choosing an algorithm"""
+
+    options = {"fisher_scipy_stats": FisherScipyStats,
+               "binomial_scipy_stats": BinomialScipyStats}
     
-class Bonferroni(_AbstractCorrection):
-    """
-    >>> Bonferroni([0.01, 0.01, 0.03, 0.05, 0.005], a=0.05).corrected_pvals
-    array([ 0.05 ,  0.05 ,  0.15 ,  0.25 ,  0.025])
-    """
-    def set_correction(self):
-        """Do Bonferroni multiple test correction on original p-values."""
-        self.corrected_pvals *= self.n
-        
-class BH_FDR(_AbstractCorrection):
-    """Benjamini–Hochberg False Discovery Rate"""
+    def __init__(self, pvalcalc: Literal["fisher_scipy_stats", "binomial_scipy_stats"] = "fisher_scipy_stats") -> None:
+        if pvalcalc not in self.options:
+            raise ValueError(f"pvalcalc must be one of {self.options.keys()}")
+        self.pval_fnc_name = pvalcalc
+        self.pval_obj: PvalueCalcBase = self._init_pval_obj()
+
+    def _init_pval_obj(self):
+        """Returns pvalue object based on the input"""
+        return self.options[self.pval_fnc_name]()
