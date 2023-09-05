@@ -162,7 +162,7 @@ class GOTerm(object):
             all_parents |= parent.get_all_parents()
         return all_parents
     
-    def get_all_children(self):
+    def get_all_children(self) -> Set[str]:
         """Return all child GO IDs."""
         all_children = set()
         for child in self.children:

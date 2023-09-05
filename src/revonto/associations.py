@@ -1,12 +1,17 @@
 """
 Read and store Gene Ontology's GAF (GO Annotation File).
 """
-from typing import Set
+from __future__ import annotations
+from typing import Set, Tuple, Generator, TYPE_CHECKING, Any, Dict
+if TYPE_CHECKING:
+    from .ontology import GODag
 import os
+import copy
 
 class Annotation():
     """
     Each annotation holds the following variables:
+    object_id (unique identifier of the product) - can be genename, DB:ID, ...
     (GO) term_id
     relationship (beaware of NOT)
     reference
@@ -15,20 +20,25 @@ class Annotation():
     date
     """
     def __init__(self) -> None:
-        self.term_id = None
+        #mandatory
+        self.object_id = None
+        self.term_id  = ""
         self.relationship = None
         self.NOTrelation = False
-        self.reference = []
+        #optional but recommended
+        self.reference = None
         self.evidence_code = None
         self.taxon = None
         self.date = None
+        #you can add any number of others TODO: Maybe optional object class like goatools
+
+    def copy(self):
+        return copy.deepcopy(self)
 
 class Annotations(dict[str, Set[Annotation]]):
     """
-    Store Annotations as a Dict with key "ID" and value a set of all Annotation objects connected to that product.
+    Store Annotations as a Dict with key "term_id" and value a set of all Annotation objects connected to that go term.
     This is how the classes preforming the study expect the data to be formated.
-
-    ID can be anythig (genename, DB:ID) depending on your pre and post analysis.
     """
     def __init__(self, assoc_file="go-basic.obo"):
         super().__init__()
@@ -40,15 +50,16 @@ class Annotations(dict[str, Set[Annotation]]):
         extension = os.path.splitext(assoc_file)[1]
         if extension == ".gaf":
             reader = GafParser(assoc_file)
-        if extension == ".gpad":
+        elif extension == ".gpad":
             raise NotImplementedError("GPAD files are not yet supported")
+        else:
+            raise NotImplementedError(f"{extension} files are not yet supported")
         
-        for obj_id, rec in reader:
-            self.setdefault(obj_id, set()).add(rec)
+        
+        for rec in reader:
+            self.setdefault(rec.term_id, set()).add(rec)
 
         return reader.version, reader.date
-
-        
 
 class AnnoParserBase():
     """
@@ -74,7 +85,7 @@ class GafParser(AnnoParserBase):
     def __init__(self, assoc_file) -> None:
         super().__init__(assoc_file)
 
-    def __iter__(self) -> (str, Annotation):
+    def __iter__(self) -> Generator[Annotation, Any, Any]:
         with open(self.assoc_file) as fstream:
             hdr = True
 
@@ -85,10 +96,9 @@ class GafParser(AnnoParserBase):
                         hdr = False
                 if not hdr and line:
                     values = line.split("\t")
-                    object_id = values[0] + ":" + values[1]
                     rec_curr = Annotation()
                     self._add_to_ref(rec_curr, values)
-                    yield object_id, rec_curr
+                    yield rec_curr
 
     def _init_hdr(self, line:str):
         """save gaf version and date"""
@@ -104,6 +114,7 @@ class GafParser(AnnoParserBase):
     
     def _add_to_ref(self, rec_curr:Annotation, values):
         """populate Annotation object with values from line"""
+        rec_curr.object_id = values[0] + ":" + values[1]
         rec_curr.term_id = values[4]
         rec_curr.relationship = values[3] #change to object
         if "NOT" in values[3]: rec_curr.NOTrelation = True
@@ -122,3 +133,27 @@ class EvidenceCodes():
     def __init__(self, code) -> None:
         if code not in self.codes:
             pass
+
+#in future maybe move it to update_associations.py
+def propagate_associations(godag: GODag, anno: Annotations):
+    """
+    Iterate through the ontology and assign all childrens' annotations to each term.
+    """
+
+    for term_id, term in godag.items():
+        annotations_to_append = anno.get(term_id, {})
+        for parent in term.get_all_parents():
+            for entry in annotations_to_append:
+                entry_to_append = entry.copy() #make a copy, since we need to change the term_id
+                entry_to_append.term_id = parent
+                anno.setdefault(parent, set()).add(entry_to_append)
+
+def anno2objkey(anno: Annotations) -> Dict[str, Set[Annotation]]:
+    """Change Annotations dict to have object_id as keys"""
+    #Should it be moved to Annotations class?
+    new_anno = {}
+    for goid, goassocset in anno.items():
+        for assoc in goassocset:
+            new_anno.setdefault(assoc.object_id, set()).add(assoc)
+    return new_anno
+
