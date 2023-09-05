@@ -57,7 +57,7 @@ class PValueFactory():
     options = {"fisher_scipy_stats": FisherScipyStats,
                "binomial_scipy_stats": BinomialScipyStats}
     
-    def __init__(self, pvalcalc: Literal["fisher_scipy_stats", "binomial_scipy_stats"] = "fisher_scipy_stats") -> None:
+    def __init__(self, pvalcalc ="fisher_scipy_stats") -> None:
         if pvalcalc not in self.options:
             raise ValueError(f"pvalcalc must be one of {self.options.keys()}")
         self.pval_fnc_name = pvalcalc
