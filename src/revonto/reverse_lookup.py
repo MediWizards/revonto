@@ -4,8 +4,8 @@ if TYPE_CHECKING:
     from .associations import Annotations
     from .ontology import GODag
 
-from revonto.pvalcalc import PValueFactory
-from revonto.associations import anno2objkey
+from .pvalcalc import PValueFactory
+from .associations import anno2objkey
 class ReverseLookupRecord(object):
     """Represents one result (from a single product) in the ReverseLookupStudy"""
     def __init__(self, objid, **kwargs):

@@ -26,15 +26,22 @@ dependencies = [
     "scipy",
 ]
 
-dynamic = ["version"]
+version = "0.0.0"
+#dynamic = ["version"]
 
-[tool.setuptools.dynamic]
-version = {attr = "revonto.__version__"}
+#[tool.setuptools.dynamic]
+#version = {attr = "revonto.__version__"}
 
 [project.optional-dependencies]
-test = [
-    "pytest"
+dev = [
+    "pytest",
+    "tox",
+    "ruff",
+    "black",
+    "mypy",
+    "check-manifest"
 ]
+
 #gui = ["PyQt5"]
 #cli = [
 #  "rich",
@@ -49,3 +56,26 @@ test = [
 #
 #[project.scripts]
 #spam-cli = "spam:main_cli"
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+requires =
+    tox>=4
+env_list = py310, py311
+
+[testenv]
+description = run unit tests
+deps =
+    pytest>=7
+    pytest-sugar
+commands =
+    pytest {posargs:tests}
+"""
+
+[tool.check-manifest]
+ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "input_files/**"]
+
+[tool.ruff]
+# Avoid enforcing line-length violations (`E501`). Black already checks for that, but it leaves comments unchanged - this makes errors in ruff.
+ignore = ["E501"]
