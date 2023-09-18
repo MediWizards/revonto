@@ -1,7 +1,8 @@
 import pytest
 
 import os
-from revonto.associations import Annotations, propagate_associations
+import re
+from revonto.associations import Annotations, Annotation, propagate_associations
 from revonto.ontology import GODag
 
 anno = Annotations(os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/human_test.gaf"))
@@ -35,3 +36,38 @@ def test_propagate_associations():
     assert "GO:0000001" in anno
     assert "GO:0000003" not in anno
     assert len(anno["GO:0000001"]) == 2
+
+def test_enforce_data_structure():
+    annodict = Annotations()
+    anno1 = Annotation(object_id="ABC1", term_id="GO:1234")
+    with pytest.raises(ValueError, match=re.escape("All elements in the set for key GO:1234 must be Annotation objects.")):
+        annodict["GO:1234"] = {"A"}
+    with pytest.raises(ValueError, match=re.escape("Value for key GO:1234 must be a set of Annotation objects.")):
+        annodict["GO:1234"] = anno1
+    with pytest.raises(ValueError, match=re.escape("All Annotation objects must have the same term_id as the key (GO:5678).")):
+        annodict["GO:5678"] = {anno1}
+
+def test_add_two_anotations_dicts():
+    anno1 = Annotation(object_id="ABC1", term_id="GO:1234")
+    anno2 = Annotation(object_id="ABC2", term_id="GO:1234")
+    anno3 = Annotation(object_id="ABC2", term_id="GO:5678")
+
+    annodict1 = Annotations()
+    annodict1["GO:1234"] = {anno1}
+    annodict2 = Annotations()
+    annodict2["GO:1234"] = {anno2}
+    annodict3 = Annotations()
+    annodict3["GO:5678"] = {anno3}
+
+    assert annodict1+annodict2 == annodict2+annodict1 # addition should be the same regardles of order
+
+    annodict12 = annodict1 + annodict2
+    assert len(annodict12) and "GO:1234" in annodict12 # only one key should exist
+    assert len(annodict12["GO:1234"]) == 2 # two Annotation s should be present under this key
+
+    annodict11 = annodict1 + annodict1
+    assert len(annodict11) == 1 and len(annodict11["GO:1234"]) == 1 # adding same Annotation to the set should not change it
+
+    annodict13 = annodict1 + annodict3
+    assert len(annodict13) == 2 # two keys should be present
+    
