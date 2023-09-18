@@ -1,13 +1,14 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, List
+
 from collections import defaultdict
+from typing import TYPE_CHECKING, List
 
 if TYPE_CHECKING:
     from .associations import Annotations
     from .ontology import GODag
 
-from .pvalcalc import PValueFactory
 from .multiple_testing import MultiCorrectionFactory
+from .pvalcalc import PValueFactory
 
 
 class ReverseLookupRecord(object):
@@ -90,7 +91,7 @@ class GOReverseLookupStudy:
             results = [r for r in results if keep_if(r)]
 
         # Default sort order:
-        #results.sort(key=lambda r: [r.p_uncorrected])
+        # results.sort(key=lambda r: [r.p_uncorrected])
 
         return results  # list of ReverseLookupRecord objects
 
@@ -161,7 +162,9 @@ class GOReverseLookupStudy:
             rec.set_corrected_pval(method, val)
 
 
-def results_intersection(*lists: list[ReverseLookupRecord]) -> dict[str, list[ReverseLookupRecord]]:
+def results_intersection(
+    *lists: list[ReverseLookupRecord],
+) -> dict[str, list[ReverseLookupRecord]]:
     intersection_dict = defaultdict(list)
 
     # Create a dictionary of object_ids and their occurrences

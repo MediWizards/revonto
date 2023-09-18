@@ -40,7 +40,8 @@ dev = [
     "ruff",
     "black",
     "mypy",
-    "check-manifest"
+    "check-manifest",
+    "isort",
 ]
 
 #gui = ["PyQt5"]
@@ -80,3 +81,8 @@ ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "in
 [tool.ruff]
 # Avoid enforcing line-length violations (`E501`). Black already checks for that, but it leaves comments unchanged - this makes errors in ruff.
 ignore = ["E501"]
+
+[tool.semantic_release]
+version_toml = ["pyproject.toml:version"] # version location
+changelog_file = "CHANGELOG.md"             # changelog file
+patch_without_tag = true                    # patch release by default

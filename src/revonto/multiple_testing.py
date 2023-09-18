@@ -1,10 +1,10 @@
-import numpy as np
-from numpy.typing import NDArray
 from typing import Any
 
+import numpy as np
+from numpy.typing import NDArray
 from statsmodels.stats.multitest import (
-    multipletests,
-)  # TODO: in future only import when needed and only once
+    multipletests,  # TODO: in future only import when needed and only once
+)
 
 
 class CorrectionBase:
