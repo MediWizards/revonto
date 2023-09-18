@@ -10,7 +10,7 @@ on:
   workflow_call:
 
 jobs:
-  lint-format-type-checkmanifest:
+  static-checks:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,20 +28,30 @@ jobs:
           pip install ruff black mypy check-manifest
 
       - name: Lint Code (ruff)
+        if: true
         run: ruff check .
 
       - name: Format Code (black)
+        if: true
         run: black --check --diff .
 
       - name: Type Check (mypy)
+        if: true
         run: mypy src tests
 
       - name: Check Manifest (check-manifest)
+        if: true
         run: check-manifest
+
+      - name: Use Codecov to track coverage
+        if: true
+        uses: codecov/codecov-action@v2
+        with:
+          files: ./coverage.xml   # coverage report
 
   pytest:
     if: success() || failure()
-    needs: lint-format-type-checkmanifest
+    needs: static-checks
     runs-on: ubuntu-latest
 
     strategy:
