@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, List
+from collections import defaultdict
 
 if TYPE_CHECKING:
     from .associations import Annotations
@@ -158,3 +159,24 @@ class GOReverseLookupStudy:
             return
         for rec, val in zip(results, corrected_pvals):
             rec.set_corrected_pval(method, val)
+
+
+def results_intersection(*lists: list[ReverseLookupRecord]) -> dict[str, list[ReverseLookupRecord]]:
+    intersection_dict = defaultdict(list)
+
+    # Create a dictionary of object_ids and their occurrences
+    object_id_counts = defaultdict(int)
+    for lst in lists:
+        for record in lst:
+            object_id_counts[record.object_id] += 1
+
+    # Find object_ids that occur in all lists
+    num_lists = len(lists)
+    for object_id, count in object_id_counts.items():
+        if count == num_lists:
+            for lst in lists:
+                for record in lst:
+                    if record.object_id == object_id:
+                        intersection_dict[object_id].append(record)
+
+    return dict(intersection_dict)
