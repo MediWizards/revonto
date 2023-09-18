@@ -24,6 +24,7 @@ classifiers = [
 dependencies = [
     "numpy",
     "scipy",
+    "statsmodels",
 ]
 
 version = "0.0.0"

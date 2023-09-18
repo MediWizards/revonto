@@ -7,6 +7,7 @@ def test_header(annotations_test):
     assert annotations_test.version == "2.2"
     assert annotations_test.date == "2023-07-29T02:43"
 
+
 @pytest.mark.skip
 def test_UniProtKBA0A024RBG1_assoc(annotations_test):
     assert "GO:0002250" in annotations_test
@@ -59,6 +60,7 @@ def test_UniProtKBA0A024RBG1_assoc(annotations_test):
         )
         == "20230703"
     )
+
 
 @pytest.mark.skip
 def test_UniProtKBA0A024RBG1_cardinality_0_fields_assoc(annotations_test):
@@ -113,7 +115,7 @@ def test_UniProtKBA0A024RBG1_cardinality_0_fields_assoc(annotations_test):
 
 
 def test_propagate_associations(annotations_test, godag_test):
-    propagated_annotations = propagate_associations(godag_test, annotations_test)
+    propagated_annotations = propagate_associations(annotations_test, godag_test)
     assert any(anno.term_id == "GO:0000001" for anno in propagated_annotations)
     assert not any(anno.term_id == "GO:0000003" for anno in propagated_annotations)
     assert (

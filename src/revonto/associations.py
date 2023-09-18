@@ -191,11 +191,13 @@ class EvidenceCodes:
 
 
 # in future maybe move it to update_associations.py
-def propagate_associations(godag: GODag, anno: Annotations):
+def propagate_associations(anno: Annotations, godag: GODag):
     """
     Iterate through the ontology and assign all childrens' annotations to each term.
     """
-    anno_term_dict = anno.dict_from_attr("term_id") #create a dictionary with annotations grouped by term_id
+    anno_term_dict = anno.dict_from_attr(
+        "term_id"
+    )  # create a dictionary with annotations grouped by term_id
     propagated_anno = Annotations()
     propagated_anno.update(anno)
     for term_id, term in godag.items():
