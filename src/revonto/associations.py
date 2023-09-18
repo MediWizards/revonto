@@ -2,12 +2,14 @@
 Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
-from typing import Set, Generator, TYPE_CHECKING, Any, Dict
+
+from typing import TYPE_CHECKING, Any, Dict, Generator, Set
 
 if TYPE_CHECKING:
     from .ontology import GODag
-import os
+
 import copy
+import os
 
 
 class Annotation:

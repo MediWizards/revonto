@@ -1,6 +1,6 @@
 import pytest
 
-from revonto.multiple_testing import MultiCorrectionFactory, CorrectionBase
+from revonto.multiple_testing import CorrectionBase, MultiCorrectionFactory
 
 
 @pytest.fixture

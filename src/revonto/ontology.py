@@ -4,7 +4,7 @@ Part of code has been taken from H Tang et al. 2018 (https://github.com/tanghaib
 """
 # -*- coding: UTF-8 -*-
 import os
-from typing import Set, Optional
+from typing import Optional, Set
 
 # if TYPE_CHECKING:
 #    from .Metrics import Metrics, basic_mirna_score

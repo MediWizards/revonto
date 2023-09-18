@@ -1,6 +1,6 @@
-import pytest
-
 import os
+
+import pytest
 
 from revonto.associations import Annotations
 from revonto.ontology import GODag

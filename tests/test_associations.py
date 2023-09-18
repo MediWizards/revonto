@@ -1,6 +1,6 @@
 import pytest
 
-from revonto.associations import Annotations, Annotation, propagate_associations
+from revonto.associations import Annotation, Annotations, propagate_associations
 
 
 def test_header(annotations_test):
