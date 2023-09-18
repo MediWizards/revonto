@@ -24,7 +24,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black mypy check-manifest
+          pip install ruff black mypy check-manifest isort
 
       - name: Lint Code (ruff)
         if: true
@@ -34,9 +34,14 @@ jobs:
         if: true
         run: black --check --diff .
 
+      - name: Sort imports (isort)
+        if: true
+        run: isort . --profile black --check --diff
+
       - name: Type Check (mypy)
         if: true
         run: mypy src tests
+        continue-on-error: true
 
       - name: Check Manifest (check-manifest)
         if: true

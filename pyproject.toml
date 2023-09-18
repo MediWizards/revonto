@@ -40,7 +40,8 @@ dev = [
     "ruff",
     "black",
     "mypy",
-    "check-manifest"
+    "check-manifest",
+    "isort",
 ]
 
 #gui = ["PyQt5"]
