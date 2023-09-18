@@ -4,9 +4,11 @@ Part of code has been taken from H Tang et al. 2018 (https://github.com/tanghaib
 """
 # -*- coding: UTF-8 -*-
 import os
-from typing import TYPE_CHECKING, Set, Optional
-#if TYPE_CHECKING:
+from typing import Set, Optional
+
+# if TYPE_CHECKING:
 #    from .Metrics import Metrics, basic_mirna_score
+
 
 class OBOReader(object):
     """Read goatools.org's obo file. Load into this iterable class.
@@ -86,7 +88,7 @@ class OBOReader(object):
         if line[0:12] == "data-version":
             self.data_version = line[14:-1]
             return True
-        if line[:17] == 'default-namespace':
+        if line[:17] == "default-namespace":
             self.default_namespace = line[18:].strip()
             return True
         if line[0:6].lower() == "[term]":
@@ -112,15 +114,18 @@ class OBOReader(object):
             assert not rec_curr.name
             rec_curr.name = line[6:]
         elif line[:5] == "def: ":
-            rec_curr.description = line[5:] 
+            rec_curr.description = line[5:]
         elif line[:11] == "namespace: ":
             rec_curr.namespace = line[11:]
-        elif line[:6] == "is_a: ": #based on https://geneontology.org/docs/ontology-relations/ "is_a" or "part_of" can be safely used as group annotations
+        elif (
+            line[:6] == "is_a: "
+        ):  # based on https://geneontology.org/docs/ontology-relations/ "is_a" or "part_of" can be safely used as group annotations
             rec_curr._parents.add(line[6:].split()[0])
         elif line[:22] == "relationship: part_of ":
             rec_curr._parents.add(line[22:].split()[0])
         elif line[:13] == "is_obsolete: " and line[13:] == "true":
             rec_curr.is_obsolete = True
+
 
 class GOTerm(object):
     """
@@ -161,7 +166,7 @@ class GOTerm(object):
             all_parents.add(parent.term_id)
             all_parents |= parent.get_all_parents()
         return all_parents
-    
+
     def get_all_children(self) -> Set[str]:
         """Return all child GO IDs."""
         all_children = set()
@@ -169,6 +174,7 @@ class GOTerm(object):
             all_children.add(child.term_id)
             all_children |= child.get_all_children()
         return all_children
+
 
 class GODag(dict[str, GOTerm]):
     """Holds the GO DAG as a dict."""
@@ -180,8 +186,7 @@ class GODag(dict[str, GOTerm]):
         load_obsolete=False,
     ):
         super().__init__()
-        self.version, self.data_version = self.load_obo_file(
-            obo_file, load_obsolete)
+        self.version, self.data_version = self.load_obo_file(obo_file, load_obsolete)
 
     def load_obo_file(self, obo_file, load_obsolete):
         """Read obo file. Store results."""
@@ -253,7 +258,6 @@ class GODag(dict[str, GOTerm]):
             return rec.depth
 
         for rec in self.values():
-
             if rec.height is None:
                 _init_height(rec)
 
@@ -268,15 +272,15 @@ class GODag(dict[str, GOTerm]):
     def query_term(self, term, verbose=False):
         """Given a GO ID, return GO object."""
         if term not in self:
-            #logging
+            # logging
             return None
 
         rec = self[term]
         if verbose:
             print(rec)
-            #logging
-            #stderr.write("all parents: {}\n".format(repr(rec.get_all_parents())))
-            #stderr.write("all children: {}\n".format(repr(rec.get_all_children())))
+            # logging
+            # stderr.write("all parents: {}\n".format(repr(rec.get_all_parents())))
+            # stderr.write("all children: {}\n".format(repr(rec.get_all_children())))
         return rec
 
     def update_association(self, association):
@@ -289,17 +293,15 @@ class GODag(dict[str, GOTerm]):
             for goid in goids:
                 try:
                     parents.update(self[goid].get_all_parents())
-                except:
+                except Exception:
                     bad_goids.add(goid.strip())
             # Add the GO parents of all GO IDs in the current gene's association
             goids.update(parents)
         if bad_goids:
-            return None #remove
-            #logging
-            #stdout.write(
+            return None  # remove
+            # logging
+            # stdout.write(
             #    "{N} GO IDs in assc. are not found in the GO-DAG: {GOs}\n".format(
             #        N=len(bad_goids), GOs=" ".join(bad_goids)
             #    )
-            #)
-
-
+            # )

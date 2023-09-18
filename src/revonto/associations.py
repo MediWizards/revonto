@@ -56,7 +56,7 @@ class Annotation:
             return True
         else:
             return False
-        
+
     def __hash__(self):
         return hash((self.object_id, self.term_id))
 
@@ -90,11 +90,17 @@ class Annotations(dict[str, Set[Annotation]]):
 
     def __setitem__(self, key, value):
         if not isinstance(value, set):
-            raise ValueError(f"Value for key {key} must be a set of Annotation objects.")
+            raise ValueError(
+                f"Value for key {key} must be a set of Annotation objects."
+            )
         if not all(isinstance(annotation, Annotation) for annotation in value):
-            raise ValueError(f"All elements in the set for key {key} must be Annotation objects.")
+            raise ValueError(
+                f"All elements in the set for key {key} must be Annotation objects."
+            )
         if not all(annotation.term_id == key for annotation in value):
-            raise ValueError(f"All Annotation objects must have the same term_id as the key ({key}).")
+            raise ValueError(
+                f"All Annotation objects must have the same term_id as the key ({key})."
+            )
         super().__setitem__(key, value)
 
     def __add__(self, other):
