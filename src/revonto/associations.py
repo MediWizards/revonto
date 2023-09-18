@@ -2,12 +2,14 @@
 Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
-from typing import Set, Generator, TYPE_CHECKING, Any, Dict
+
+from typing import TYPE_CHECKING, Any, Dict, Generator, Set
 
 if TYPE_CHECKING:
     from .ontology import GODag
-import os
+
 import copy
+import os
 
 
 class Annotation:
@@ -61,11 +63,8 @@ class Annotation:
         return hash((self.object_id, self.term_id))
 
 
-class Annotations(dict[str, Set[Annotation]]):
-    """
-    Store Annotations as a Dict with key "term_id" and value a set of all Annotation objects connected to that go term.
-    This is how the classes preforming the study expect the data to be formated.
-    """
+class Annotations(set[Annotation]):
+    """Store annotations as a set of Annotation objects"""
 
     def __init__(self, file: str = ""):
         super().__init__()
@@ -84,42 +83,33 @@ class Annotations(dict[str, Set[Annotation]]):
             raise NotImplementedError(f"{extension} files are not yet supported")
 
         for rec in reader:
-            self.setdefault(rec.term_id, set()).add(rec)
+            self.add(rec)
 
         return reader.version, reader.date
 
-    def __setitem__(self, key, value):
-        if not isinstance(value, set):
-            raise ValueError(
-                f"Value for key {key} must be a set of Annotation objects."
-            )
-        if not all(isinstance(annotation, Annotation) for annotation in value):
-            raise ValueError(
-                f"All elements in the set for key {key} must be Annotation objects."
-            )
-        if not all(annotation.term_id == key for annotation in value):
-            raise ValueError(
-                f"All Annotation objects must have the same term_id as the key ({key})."
-            )
-        super().__setitem__(key, value)
+    def dict_from_attr(self, attribute: str) -> dict[str, set[Annotation]]:
+        """groups annotations by attribute and store it in dictionary
 
-    def __add__(self, other):
+        Args:
+            attribute (str): which Annotation attribute to group by
+
+        Raises:
+            ValueError: if attribute is not in Annotation class
+
+        Returns:
+            _type_: dictionary of sets of Annotation objects, grouped by attribute
         """
-        Combine two Annotations objects using the + operator.
-        :param other: Another Annotations object to be merged with this one.
-        :return: A new Annotations object containing the combined data.
-        """
-        combined_annotations = Annotations()
+        if not hasattr(Annotation(), attribute):
+            raise ValueError(f"Attribute {attribute} not in Annotation class.")
 
-        # Merge the current object into the new one
-        for term_id, annotations in self.items():
-            combined_annotations.setdefault(term_id, set()).update(annotations)
+        grouped_dict: dict[str, set[Annotation]] = {}
+        for anno in self:
+            attribute_value = getattr(anno, attribute)
+            if attribute_value == "" or attribute_value is None:
+                attribute_value = "None"
+            grouped_dict.setdefault(attribute_value, set()).add(anno)
 
-        # Merge the other object into the new one
-        for term_id, annotations in other.items():
-            combined_annotations.setdefault(term_id, set()).update(annotations)
-
-        return combined_annotations
+        return grouped_dict
 
 
 class AnnoParserBase:
@@ -203,20 +193,26 @@ class EvidenceCodes:
 
 
 # in future maybe move it to update_associations.py
-def propagate_associations(godag: GODag, anno: Annotations):
+def propagate_associations(anno: Annotations, godag: GODag):
     """
     Iterate through the ontology and assign all childrens' annotations to each term.
     """
-
+    anno_term_dict = anno.dict_from_attr(
+        "term_id"
+    )  # create a dictionary with annotations grouped by term_id
+    propagated_anno = Annotations()
+    propagated_anno.update(anno)
     for term_id, term in godag.items():
-        annotations_to_append = anno.get(term_id, {})
+        annotations_to_append = anno_term_dict.get(term_id, set())
         for parent in term.get_all_parents():
             for entry in annotations_to_append:
                 entry_to_append = (
                     entry.copy()
                 )  # make a copy, since we need to change the term_id
                 entry_to_append.term_id = parent
-                anno.setdefault(parent, set()).add(entry_to_append)
+                # TODO: change evidence code or something to mark the propagated associations
+                propagated_anno.add(entry_to_append)
+    return propagated_anno
 
 
 def anno2objkey(anno: Annotations) -> Dict[str, Set[Annotation]]:

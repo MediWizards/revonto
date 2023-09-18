@@ -1,5 +1,6 @@
 """Options for calculating uncorrected p-values."""
 
+
 class PvalueCalcBase:
     """Base class for calculating p-value"""
 
