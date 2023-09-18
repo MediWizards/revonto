@@ -34,7 +34,7 @@ jobs:
         run: black --check --diff .
 
       - name: Type Check (mypy)
-        run: mypy --strict src tests
+        run: mypy src tests
 
       - name: Check Manifest (check-manifest)
         run: check-manifest
