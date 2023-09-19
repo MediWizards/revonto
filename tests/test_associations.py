@@ -1,6 +1,11 @@
 import pytest
 
-from revonto.associations import Annotation, Annotations, propagate_associations, match_annotations_to_godag
+from revonto.associations import (
+    Annotation,
+    Annotations,
+    match_annotations_to_godag,
+    propagate_associations,
+)
 from revonto.ontology import GODag, GOTerm
 
 
