@@ -22,7 +22,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ruff black mypy check-manifest isort
+          pip install .[lint]
 
       - name: Lint Code (ruff)
         if: true
@@ -45,11 +45,6 @@ jobs:
         if: true
         run: check-manifest
 
-      - name: Use Codecov to track coverage
-        if: true
-        uses: codecov/codecov-action@v2
-        with:
-          files: ./coverage.xml   # coverage report
 
   pytest:
     if: success() || failure()
@@ -72,8 +67,13 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install .
-          pip install pytest
+          pip install .[test]
 
-      - name: Run Tests and Calculate Coverage
+      - name: Run Tests
         run: pytest
+
+      - name: Check differential coverage (diff-cov) 
+        if: true
+        run: |
+          pytest --cov --cov-report=xml
+          diff-cover coverage.xml --fail-under=80
