@@ -223,19 +223,8 @@ def match_annotations_to_godag(anno: Annotations, godag: GODag):
         godag (GODag): _description_
     """
     all_goterms_in_godag = godag.keys()
-
+    matched_annoobj = Annotations()
     for annoobj in anno:
-        if annoobj.term_id not in all_goterms_in_godag:
-            anno.remove(annoobj)
-    return anno
-
-
-
-def anno2objkey(anno: Annotations) -> Dict[str, Set[Annotation]]:
-    """Change Annotations dict to have object_id as keys"""
-    # Should it be moved to Annotations class?
-    new_anno = {}
-    for goid, goassocset in anno.items():
-        for assoc in goassocset:
-            new_anno.setdefault(assoc.object_id, set()).add(assoc)
-    return new_anno
+        if annoobj.term_id in all_goterms_in_godag:
+            matched_annoobj.add(annoobj)
+    return matched_annoobj

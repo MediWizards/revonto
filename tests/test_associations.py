@@ -1,6 +1,7 @@
 import pytest
 
-from revonto.associations import Annotation, Annotations, propagate_associations
+from revonto.associations import Annotation, Annotations, propagate_associations, match_annotations_to_godag
+from revonto.ontology import GODag, GOTerm
 
 
 def test_header(annotations_test):
@@ -160,3 +161,22 @@ def test_annotation_set_operations():
     assert annoset1.intersection(annoset2) == set()
 
     assert annoset1.intersection(annoset1.union(annoset2)) == annoset1
+
+
+def test_match_annotations_to_godag():
+    annoset = Annotations()
+    annoset.update(
+        [
+            Annotation(object_id="ABC1", term_id="GO:1234"),
+            Annotation(object_id="ABC2", term_id="GO:1234"),
+            Annotation(object_id="ABC2", term_id="GO:5678"),
+        ]
+    )
+
+    godag = GODag()
+    godag["GO:1234"] = GOTerm("GO:1234")
+
+    matched_anno = match_annotations_to_godag(annoset, godag)
+
+    assert len(annoset) == 3
+    assert len(matched_anno) == 2
