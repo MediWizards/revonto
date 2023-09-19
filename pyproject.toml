@@ -43,7 +43,8 @@ lint = [
 ]
 test = [
     "pytest",
-    "pytest-cov"
+    "pytest-cov",
+    "pytest-sugar",
     ]
 
 

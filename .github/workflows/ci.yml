@@ -69,12 +69,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[test]
 
-      - name: Run Tests
-        run: pytest
+      - name: Run Tests and Check coverage
+        run: pytest --cov=src --cov-fail-under=80
 
-      - name: Check differential coverage (diff-cov) 
-        if: true
-        run: |
-          pytest --cov --cov-report=xml
-          pip install diff-cover
-          diff-cover coverage.xml --fail-under=80
