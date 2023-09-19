@@ -5,12 +5,14 @@ from revonto.associations import Annotations, propagate_associations
 from revonto.ontology import GODag
 from revonto.reverse_lookup import GOReverseLookupStudy, results_intersection
 
+import os
+
 # There is no need to store GO term lists like that. You can store it in any format you want.
 # You only need to write a custom parser to read the file and produce a list of GO terms
 
-godag = GODag("go.obo")
+godag = GODag(os.path.join(os.path.dirname(os.path.abspath(__file__)),"go.obo"))
 
-anno = Annotations("goa_human.gaf")
+anno = Annotations(os.path.join(os.path.dirname(os.path.abspath(__file__)),"goa_human.gaf"))
 
 # godag defines the population of GOTerms, if you don't intend to use the whole go.obo,
 # make sure to match the Annotations object to it. You only need to match it once after the import.
@@ -19,8 +21,8 @@ anno = Annotations("goa_human.gaf")
 # If you combine (union, add...) multiple Annotations objects, make sure that each object was matched
 # or you need to match the resulting combined Annotations object.
 
-# from revonto.associations import match_annotations_to_godag
-# matched_anno = match_annotations_to_godag(anno, godag)
+#from revonto.associations import match_annotations_to_godag
+#matched_anno = match_annotations_to_godag(anno, godag)
 
 # If you would like to include indirect annotaions (from children) propagate them!
 propagated_anno = propagate_associations(anno, godag)
