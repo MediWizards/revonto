@@ -76,4 +76,5 @@ jobs:
         if: true
         run: |
           pytest --cov --cov-report=xml
+          pip install diff-cover
           diff-cover coverage.xml --fail-under=80
