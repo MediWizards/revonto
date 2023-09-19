@@ -34,15 +34,18 @@ version = "0.1.1"
 #version = {attr = "revonto.__version__"}
 
 [project.optional-dependencies]
-dev = [
-    "pytest",
-    "tox",
+lint = [
     "ruff",
     "black",
     "mypy",
     "check-manifest",
     "isort",
 ]
+test = [
+    "pytest",
+    "pytest-cov"
+    ]
+
 
 #gui = ["PyQt5"]
 #cli = [
