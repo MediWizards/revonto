@@ -3,7 +3,7 @@ Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
 
-from typing import TYPE_CHECKING, Any, Dict, Generator, Set
+from typing import TYPE_CHECKING, Any, Generator
 
 if TYPE_CHECKING:
     from .ontology import GODag
@@ -215,11 +215,16 @@ def propagate_associations(anno: Annotations, godag: GODag):
     return propagated_anno
 
 
-def anno2objkey(anno: Annotations) -> Dict[str, Set[Annotation]]:
-    """Change Annotations dict to have object_id as keys"""
-    # Should it be moved to Annotations class?
-    new_anno = {}
-    for goid, goassocset in anno.items():
-        for assoc in goassocset:
-            new_anno.setdefault(assoc.object_id, set()).add(assoc)
-    return new_anno
+def match_annotations_to_godag(anno: Annotations, godag: GODag):
+    """match that all goterms in Annotations are also in GODag.
+
+    Args:
+        anno (Annotations): _description_
+        godag (GODag): _description_
+    """
+    all_goterms_in_godag = godag.keys()
+    matched_annoobj = Annotations()
+    for annoobj in anno:
+        if annoobj.term_id in all_goterms_in_godag:
+            matched_annoobj.add(annoobj)
+    return matched_annoobj

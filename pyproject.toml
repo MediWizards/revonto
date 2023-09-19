@@ -34,15 +34,19 @@ version = "0.1.1"
 #version = {attr = "revonto.__version__"}
 
 [project.optional-dependencies]
-dev = [
-    "pytest",
-    "tox",
+lint = [
     "ruff",
     "black",
     "mypy",
     "check-manifest",
     "isort",
 ]
+test = [
+    "pytest",
+    "pytest-cov",
+    "pytest-sugar",
+    ]
+
 
 #gui = ["PyQt5"]
 #cli = [
@@ -76,7 +80,7 @@ commands =
 """
 
 [tool.check-manifest]
-ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "input_files/**"]
+ignore = ["tests/**", ".vscode/**", "logging_config.json", "exe_version/**", "input_files/**", "docs/**", "examples/**"]
 
 [tool.ruff]
 # Avoid enforcing line-length violations (`E501`). Black already checks for that, but it leaves comments unchanged - this makes errors in ruff.

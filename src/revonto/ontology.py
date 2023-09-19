@@ -132,15 +132,22 @@ class GOTerm(object):
     GO term, actually contain a lot more properties than interfaced here
     """
 
-    def __init__(self):
-        self.term_id = ""  # GO:NNNNNNN
-        self.name = ""  # description
-        self.description = ""
-        self.namespace = "default"  # BP, CC, MF
+    def __init__(
+        self,
+        term_id: str = "",
+        name: str = "",
+        description: str = "",
+        namespace: str = "default",
+        is_obsolete: bool = False,
+    ):
+        self.term_id = term_id  # GO:NNNNNNN
+        self.name = name  # description
+        self.description = description
+        self.namespace = namespace  # BP, CC, MF
         self._parents = set()  # is_a basestring of parents
         self.parents: Set[GOTerm] = set()  # direct parent records
         self.children: Set[GOTerm] = set()  # direct children records
-        self.is_obsolete = False  # is_obsolete
+        self.is_obsolete = is_obsolete  # is_obsolete
         self.alt_ids = set()  # alternative identifiers
         self.height: Optional[int] = None
         self.depth: Optional[int] = None
@@ -182,11 +189,14 @@ class GODag(dict[str, GOTerm]):
     # pylint: disable=line-too-long
     def __init__(
         self,
-        obo_file="go-basic.obo",
+        obo_file="",
         load_obsolete=False,
     ):
         super().__init__()
-        self.version, self.data_version = self.load_obo_file(obo_file, load_obsolete)
+        if obo_file != "":
+            self.version, self.data_version = self.load_obo_file(
+                obo_file, load_obsolete
+            )
 
     def load_obo_file(self, obo_file, load_obsolete):
         """Read obo file. Store results."""
