@@ -2,6 +2,37 @@
 
 
 
+## v0.1.1 (2023-09-19)
+
+### Fix
+
+* fix: from ci remove on push: main (#6) ([`0779372`](https://github.com/MediWizards/revonto/commit/077937214e8ea50776b84f4e8f8065612d9fd6a5))
+
+### Unknown
+
+* reverse to pat, add check for semantic-release (#7) ([`61d55cd`](https://github.com/MediWizards/revonto/commit/61d55cd17954047a4f4557538fee64be2ba8f80b))
+
+* separate ci cd and fix semantic-version-release (#5)
+
+* merge ci-cd
+
+* add isort, remove mypy
+
+* add semantic versioning
+
+* lint
+
+* bug: remove editorconfig
+
+* bug: remove editorconfig
+
+* add build to cd
+
+* add admin token
+
+* fix: python-semantic-release ([`573c7a7`](https://github.com/MediWizards/revonto/commit/573c7a7d3b37ceab7aa62c8a2738a8103a812ffb))
+
+
 ## v0.1.0 (2023-09-18)
 
 ### Feature
