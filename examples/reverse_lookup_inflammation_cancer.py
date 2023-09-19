@@ -1,14 +1,13 @@
-# import GO term lists. They are in separate file to keep this file cleaner.
 import os
 
+# import GO term lists. They are in separate file to keep this file cleaner.
+# There is no need to store GO term lists like that. You can store it in any format you want.
+# You only need to write a custom parser to read the file and produce a list of GO terms
 from studysets_for_cancer_inflamation import studyset_cancer, studyset_infla
 
 from revonto.associations import Annotations, propagate_associations
 from revonto.ontology import GODag
 from revonto.reverse_lookup import GOReverseLookupStudy, results_intersection
-
-# There is no need to store GO term lists like that. You can store it in any format you want.
-# You only need to write a custom parser to read the file and produce a list of GO terms
 
 godag = GODag(os.path.join(os.path.dirname(os.path.abspath(__file__)), "go.obo"))
 
