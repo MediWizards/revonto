@@ -72,3 +72,6 @@ jobs:
       - name: Run Tests and Check coverage
         run: python -m pytest --cov --cov-fail-under=80
 
+      - name: Upload to Coveralls
+        uses: coverallsapp/github-action@v2
+
