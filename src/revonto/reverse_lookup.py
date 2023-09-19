@@ -51,6 +51,7 @@ class GOReverseLookupStudy:
         self.anno = anno
         self.obo_dag = obo_dag
         self.alpha = alpha
+        self.methods = methods
         if methods is None:
             self.methods = ["bonferroni"]  # add statsmodel multipletest
         self.pval_obj = PValueFactory(pvalcalc).pval_obj

@@ -215,6 +215,22 @@ def propagate_associations(anno: Annotations, godag: GODag):
     return propagated_anno
 
 
+def match_annotations_to_godag(anno: Annotations, godag: GODag):
+    """match that all goterms in Annotations are also in GODag.
+
+    Args:
+        anno (Annotations): _description_
+        godag (GODag): _description_
+    """
+    all_goterms_in_godag = godag.keys()
+
+    for annoobj in anno:
+        if annoobj.term_id not in all_goterms_in_godag:
+            anno.remove(annoobj)
+    return anno
+
+
+
 def anno2objkey(anno: Annotations) -> Dict[str, Set[Annotation]]:
     """Change Annotations dict to have object_id as keys"""
     # Should it be moved to Annotations class?
