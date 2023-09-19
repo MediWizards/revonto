@@ -70,5 +70,5 @@ jobs:
           pip install .[test]
 
       - name: Run Tests and Check coverage
-        run: pytest --cov=src --cov-fail-under=80
+        run: python -m pytest --cov=src --cov-fail-under=80
 
