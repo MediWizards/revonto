@@ -2,6 +2,53 @@
 
 
 
+## v0.1.2 (2023-09-19)
+
+### Fix
+
+* fix: cd test install package name ([`d5be5ff`](https://github.com/MediWizards/revonto/commit/d5be5ff03c325290f595406ec6b6d27ccb884e2c))
+
+### Unknown
+
+* [no_ci] change example comments ([`0359530`](https://github.com/MediWizards/revonto/commit/0359530f1441e8d978074a2eb86b06ca1d0586fe))
+
+* Update README.md ([`8574810`](https://github.com/MediWizards/revonto/commit/8574810a6db07b0eb1663f3a8241bb52d6336f19))
+
+* Add examples, feat: match_annotataions_to_godag (#9), add coverage to ci
+
+* add cancer/inflammation example
+
+* feat: add match_annotations_to_godag
+
+* fix: add test_match_annotations_to_godag
+
+* lint
+
+* fix: filepath in example
+
+* lint
+
+* fix check_manifest ignore
+
+* split optional dependancies
+
+* add diff coverage
+
+* fix: missing install diff-cover
+
+* addd pytest sugar and pytest cov
+
+* fix: env for pytest in ci
+
+* fix: coverage now works
+
+* add coveralls
+
+* add coverage badge ([`1d03d4b`](https://github.com/MediWizards/revonto/commit/1d03d4bcb6853a2985b72517002b3a1171d50104))
+
+* split create release and deploy (#8) ([`73f067a`](https://github.com/MediWizards/revonto/commit/73f067a14e2e5ca1d6ae777684da1df7477de485))
+
+
 ## v0.1.1 (2023-09-19)
 
 ### Fix
