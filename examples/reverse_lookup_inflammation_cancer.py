@@ -5,7 +5,7 @@ import os
 # You only need to write a custom parser to read the file and produce a list of GO terms
 from studysets_for_cancer_inflamation import studyset_cancer, studyset_infla
 
-from revonto.associations import Annotations, propagate_associations
+from revonto.associations import Annotations
 from revonto.ontology import GODag
 from revonto.reverse_lookup import GOReverseLookupStudy, results_intersection
 
@@ -22,18 +22,14 @@ anno = Annotations(
 # If you combine (union, add...) multiple Annotations objects, make sure that each object was matched
 # or you need to match the resulting combined Annotations object.
 
-# from revonto.associations import match_annotations_to_godag
-# matched_anno = match_annotations_to_godag(anno, godag)
+# anno.match_annotations_to_godag(godag)
 
 # If you would like to include indirect annotaions (from children) propagate them!
-propagated_anno = propagate_associations(anno, godag)
-
-# you now have two Annotations objects: anno and propagated_anno
-# be sure to use the one you want in code below
+anno.propagate_associations(godag)
 
 # ortholog function will come here and will modify Annotations object
 
-# setup the study. Please note that anno Annotations object is used. Change it so propagated_anno if you want.
+# setup the study.
 study = GOReverseLookupStudy(
     anno, godag, alpha=0.05, pvalcalc="fisher_scipy_stats", methods=["bonferroni"]
 )
@@ -53,8 +49,8 @@ results_cancer = study.run_study(studyset_cancer)
 # Note: GODag doesn't necessarly include all the GOTerms in GO. Perhaps you built the study subset only from Molecular Function part of GO. Or with a subset.
 
 # check which were the significant products from each subset
-significant_infla = [r for r in results_infla if r.p_bonferroni < 0.05]
-significant_cancer = [r for r in results_cancer if r.p_bonferroni < 0.05]
+significant_infla = [r for r in results_infla if r.pvals["bonferroni"] < 0.05]
+significant_cancer = [r for r in results_cancer if r.pvals["bonferroni"] < 0.05]
 
 print([r.object_id for r in significant_infla])
 print([r.object_id for r in significant_cancer])

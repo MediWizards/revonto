@@ -11,5 +11,7 @@ def test_reverse_lookup_study(annotations_test, godag_test):
     results = study.run_study(studyset)
 
     assert results[0].object_id == "UniProtKB:A0A024RBG1"
-    assert pytest.approx(results[0].p_uncorrected) == 0.40
-    assert pytest.approx(results[0].p_bonferroni) == 0.40  # only one test was done
+    assert pytest.approx(results[0].pvals["uncorrected"]) == 0.40
+    assert (
+        pytest.approx(results[0].pvals["bonferroni"]) == 0.40
+    )  # only one test was done

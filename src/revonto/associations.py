@@ -3,7 +3,7 @@ Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
 
-from typing import TYPE_CHECKING, Any, Generator
+from typing import TYPE_CHECKING, Any, Generator, Optional
 
 if TYPE_CHECKING:
     from .ontology import GODag
@@ -174,8 +174,8 @@ class AnnoParserBase:
             self.assoc_file = assoc_file
         else:
             raise FileNotFoundError(f"{assoc_file} not found")
-        self.version = None
-        self.date = None
+        self.version: Optional[str] = None
+        self.date: Optional[str] = None
 
     def __iter__(self):
         raise NotImplementedError("Call derivative class!")
