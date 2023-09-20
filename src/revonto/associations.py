@@ -218,12 +218,12 @@ class GafParser(AnnoParserBase):
         """populate Annotation object with values from line"""
         rec_curr.object_id = values[0] + ":" + values[1]
         rec_curr.term_id = values[4]
-        rec_curr.relationship = values[3]  # change to object
+        rec_curr.relationship = values[3]  # TODO:change to object
         if "NOT" in values[3]:
             rec_curr.NOTrelation = True
         rec_curr.reference = values[5]
-        rec_curr.evidence_code = values[6]  # change to object
-        rec_curr.taxon = values[12]  # change to object
+        rec_curr.evidence_code = values[6]  # TODO:change to object
+        rec_curr.taxon = values[12][6:]  # remove "taxon" TODO:change to object
         rec_curr.date = values[13]
 
 
