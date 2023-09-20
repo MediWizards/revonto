@@ -7,8 +7,8 @@ if TYPE_CHECKING:
     from .associations import Annotations
     from .ontology import GODag
 
-from .multiple_testing import MultiCorrectionFactory
-from .pvalcalc import PValueFactory
+from .multiple_testing import multiple_correction
+from .pvalcalc import pvalue_calculate
 
 
 class ReverseLookupRecord(object):
@@ -54,7 +54,7 @@ class GOReverseLookupStudy:
         self.methods = methods
         if methods is None:
             self.methods = ["bonferroni"]  # add statsmodel multipletest
-        self.pval_obj = PValueFactory(pvalcalc).pval_obj
+        self.pval_method = pvalcalc
 
     def run_study(self, study, **kws) -> List[ReverseLookupRecord]:
         """_summary_
@@ -120,21 +120,22 @@ class GOReverseLookupStudy:
             study_count = len(
                 study_items
             )  # for each object id (product id) check how many goterms in study are associated to it
+
             study_n = len(study)  # N of study set
 
             population_items = set(
                 anno_obj.term_id for anno_obj in dict_by_object_id[object_id]
             )
-
             pop_count = len(
                 population_items
             )  # total number of goterms an objectid (product id) is associated in the whole population set
+
             pop_n = len(dict_by_term_id)  # total number of goterms in population set
 
             one_record = ReverseLookupRecord(
                 object_id,
-                p_uncorrected=self.pval_obj.calc_pvalue(
-                    study_count, study_n, pop_count, pop_n
+                p_uncorrected=pvalue_calculate(
+                    study_count, study_n, pop_count, pop_n, self.pval_method
                 ),
                 study_items=study_items,
                 population_items=population_items,
@@ -149,9 +150,7 @@ class GOReverseLookupStudy:
     def _run_multitest_corr(self, results, methods, a):
         pvals = [r.p_uncorrected for r in results]
         for method in methods:
-            corrected_pvals = MultiCorrectionFactory(method).corr_obj.set_correction(
-                pvals, a
-            )
+            corrected_pvals = multiple_correction(pvals, method, a)
             self._update_pvalcorr(results, method, corrected_pvals)
 
     @staticmethod

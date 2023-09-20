@@ -1,11 +1,6 @@
 import pytest
 
-from revonto.associations import (
-    Annotation,
-    Annotations,
-    match_annotations_to_godag,
-    propagate_associations,
-)
+from revonto.associations import Annotation, Annotations
 from revonto.ontology import GODag, GOTerm
 
 
@@ -120,13 +115,11 @@ def test_UniProtKBA0A024RBG1_cardinality_0_fields_assoc(annotations_test):
     )
 
 
-def test_propagate_associations(annotations_test, godag_test):
-    propagated_annotations = propagate_associations(annotations_test, godag_test)
-    assert any(anno.term_id == "GO:0000001" for anno in propagated_annotations)
-    assert not any(anno.term_id == "GO:0000003" for anno in propagated_annotations)
-    assert (
-        sum(1 for anno in propagated_annotations if anno.term_id == "GO:0000001") == 2
-    )
+def test_propagate_associations(annotations_test: Annotations, godag_test: GODag):
+    annotations_test.propagate_associations(godag_test)
+    assert any(anno.term_id == "GO:0000001" for anno in annotations_test)
+    assert not any(anno.term_id == "GO:0000003" for anno in annotations_test)
+    assert sum(1 for anno in annotations_test if anno.term_id == "GO:0000001") == 2
 
 
 def test_dict_from_attr():
@@ -181,7 +174,21 @@ def test_match_annotations_to_godag():
     godag = GODag()
     godag["GO:1234"] = GOTerm("GO:1234")
 
-    matched_anno = match_annotations_to_godag(annoset, godag)
-
     assert len(annoset) == 3
-    assert len(matched_anno) == 2
+
+    annoset.match_annotations_to_godag(godag)
+    assert len(annoset) == 2
+
+
+def test_add_taxon_to_object_id():
+    annoset = Annotations()
+    annoset.update(
+        [
+            Annotation(object_id="ABC1", term_id="GO:1234", taxon="taxon:9606"),
+            Annotation(object_id="ABC2", term_id="GO:1234"),
+        ]
+    )
+    annoset.add_taxon_to_object_id()
+
+    assert any(a.object_id == "ABC1-taxon:9606" for a in annoset)
+    assert any(a.object_id == "ABC2" for a in annoset)

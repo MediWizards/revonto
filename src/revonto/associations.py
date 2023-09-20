@@ -37,14 +37,16 @@ class Annotation:
         **kwargs,
     ) -> None:
         # mandatory - this makes an annotation "unique", rest is just metadata
-        self.object_id = object_id
+        self.object_id = object_id  # genename is nice, but not unique trans-species! the use of genename as an object_id is highly discouraged. If you use genename, at least add some kind of species identifier to it. You can use add taxon_to_object_id()
         self.term_id = term_id
+        self.taxon = (
+            taxon  # just in case you decide to use genename, the taxon is needed
+        )
         # optional but recommended
         self.relationship = relationship
         self.NOTrelation = NOTrelation
         self.reference = reference
         self.evidence_code = evidence_code
-        self.taxon = taxon
         self.date = date
         # you can add any number of others TODO: Maybe optional object class like goatools
 
@@ -54,13 +56,17 @@ class Annotation:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Annotation):
             return NotImplemented
-        if self.object_id == other.object_id and self.term_id == other.term_id:
+        if (
+            self.object_id == other.object_id
+            and self.term_id == other.term_id
+            and self.taxon == other.taxon
+        ):
             return True
         else:
             return False
 
     def __hash__(self):
-        return hash((self.object_id, self.term_id))
+        return hash((self.object_id, self.term_id, self.taxon))
 
 
 class Annotations(set[Annotation]):
@@ -88,7 +94,8 @@ class Annotations(set[Annotation]):
         return reader.version, reader.date
 
     def dict_from_attr(self, attribute: str) -> dict[str, set[Annotation]]:
-        """groups annotations by attribute and store it in dictionary
+        """groups annotations by attribute and store it in dictionary.
+        MOVE TO READ ME: If you use gene name as an identifier, some of the transpecies annotations might be grouped together
 
         Args:
             attribute (str): which Annotation attribute to group by
@@ -111,13 +118,55 @@ class Annotations(set[Annotation]):
 
         return grouped_dict
 
+    def propagate_associations(self, godag: GODag) -> None:
+        """
+        Iterate through the ontology and assign all childrens' annotations to each term.
+        """
+        anno_term_dict = self.dict_from_attr(
+            "term_id"
+        )  # create a dictionary with annotations grouped by term_id
+
+        for term_id, term in godag.items():
+            annotations_to_append = anno_term_dict.get(term_id, set())
+            for parent in term.get_all_parents():
+                for entry in annotations_to_append:
+                    entry_to_append = (
+                        entry.copy()
+                    )  # make a copy, since we need to change the term_id
+                    entry_to_append.term_id = parent
+                    # TODO: change evidence code or something to mark the propagated associations
+                    self.add(entry_to_append)
+
+    def match_annotations_to_godag(self, godag: GODag) -> None:
+        """match that all goterms in Annotations are also in GODag.
+
+        Args:
+            anno (Annotations): _description_
+            godag (GODag): _description_
+        """
+        all_goterms_in_godag = godag.keys()
+        items_to_remove = set()
+        for annoobj in self:
+            if annoobj.term_id not in all_goterms_in_godag:
+                items_to_remove.add(annoobj)
+        self.difference_update(items_to_remove)
+
+    def add_taxon_to_object_id(self) -> None:
+        """Append taxon to object_id. Especially useful if you decide to use gene names for object_id.
+
+        Args:
+            anno (Annotations): _description_
+        """
+
+        for annoobj in self:
+            if annoobj.taxon:
+                annoobj.object_id = annoobj.object_id + "-" + annoobj.taxon
+
 
 class AnnoParserBase:
     """
     There is more than one type of annotation file.
     Therefore we will use a base class to standardize the data and the methods.
-
-    Currently we only support GAF, beacuse we need
     """
 
     def __init__(self, assoc_file) -> None:
@@ -190,41 +239,3 @@ class EvidenceCodes:
     def __init__(self, code) -> None:
         if code not in self.codes:
             pass
-
-
-# in future maybe move it to update_associations.py
-def propagate_associations(anno: Annotations, godag: GODag):
-    """
-    Iterate through the ontology and assign all childrens' annotations to each term.
-    """
-    anno_term_dict = anno.dict_from_attr(
-        "term_id"
-    )  # create a dictionary with annotations grouped by term_id
-    propagated_anno = Annotations()
-    propagated_anno.update(anno)
-    for term_id, term in godag.items():
-        annotations_to_append = anno_term_dict.get(term_id, set())
-        for parent in term.get_all_parents():
-            for entry in annotations_to_append:
-                entry_to_append = (
-                    entry.copy()
-                )  # make a copy, since we need to change the term_id
-                entry_to_append.term_id = parent
-                # TODO: change evidence code or something to mark the propagated associations
-                propagated_anno.add(entry_to_append)
-    return propagated_anno
-
-
-def match_annotations_to_godag(anno: Annotations, godag: GODag):
-    """match that all goterms in Annotations are also in GODag.
-
-    Args:
-        anno (Annotations): _description_
-        godag (GODag): _description_
-    """
-    all_goterms_in_godag = godag.keys()
-    matched_annoobj = Annotations()
-    for annoobj in anno:
-        if annoobj.term_id in all_goterms_in_godag:
-            matched_annoobj.add(annoobj)
-    return matched_annoobj
