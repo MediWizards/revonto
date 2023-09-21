@@ -1,5 +1,7 @@
 from collections import defaultdict
-from typing import Union
+from typing import Union, TYPE_CHECKING, Optional
+if TYPE_CHECKING:
+    from revonto.associations import Annotations
 
 import requests
 
@@ -16,12 +18,13 @@ def NCBITaxon_to_gProfiler(taxon):
     taxon_equivalents = {
         9606: "hsapiens",
         7955: "drerio",
+        10116: "rnovericus"
     }
     return taxon_equivalents[taxon]
 
 
 def gOrth(
-    source_ids: list, source_taxon: str, target_taxon: str
+    source_ids: list[str], source_taxon: str, target_taxon: str
 ) -> dict[str, list[str]]:
     """_summary_
 
@@ -51,10 +54,10 @@ def gOrth(
 
 
 def find_orthologs(
-    source_ids: Union[str, list[str]],
-    source_taxon: str,
-    target_taxon: str,
-    database: str,
+    source_ids: Union[str, list[str], Annotations],
+    source_taxon: Optional[str] = None,
+    target_taxon: str = "9606",
+    database: str = "gOrth",
 ) -> dict[str, list[str]]:
     """_summary_
 
@@ -72,6 +75,12 @@ def find_orthologs(
     """
     if isinstance(source_ids, str):
         source_ids = [source_ids]
+    if isinstance(source_ids, Annotations):
+        all_object_ids: dict[str, set[str]] = defaultdict(set) # set to ensure no multiple entries
+        for anno in source_ids:
+            all_object_ids[anno.taxon].add(anno.object_id)
+        for taxon, object_ids in all_object_ids.items():
+            find_orthologs(list(object_ids), taxon, target_taxon, database)
 
     if database == "gOrth":
         source_taxon = NCBITaxon_to_gProfiler(source_taxon)

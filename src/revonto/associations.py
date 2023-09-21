@@ -162,6 +162,20 @@ class Annotations(set[Annotation]):
             if annoobj.taxon:
                 annoobj.object_id = annoobj.object_id + "-" + annoobj.taxon
 
+    def find_orthologs(self, taxon, prune=False) -> None:
+        """_summary_
+
+        Args:
+            taxon (_type_): _description_
+            prune (bool, optional): _description_. Defaults to False.
+        """        
+        all_object_ids = set()
+        for anno in self:
+            all_object_ids.add(anno.object_id)
+        orthologs_dict = 
+
+
+
 
 class AnnoParserBase:
     """
