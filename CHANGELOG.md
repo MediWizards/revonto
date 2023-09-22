@@ -2,6 +2,41 @@
 
 
 
+## v0.2.0 (2023-09-22)
+
+### Feature
+
+* feat: add ortholog and convert id (#12)
+
+* from object oriented to functional for some
+
+* fix: typing
+
+* feat: add gOrth orthologand base ortholog class
+
+* intermittent ortholog commit
+
+* feat: add ortholog and convert_id ([`1bbb598`](https://github.com/MediWizards/revonto/commit/1bbb59897b29fa10ac653841c4dbeddc0b2535fa))
+
+### Unknown
+
+* Revert &#34;Add ortholog and convert_id (#10)&#34; (#11)
+
+This reverts commit 622dd4273e3a1b56959996f7b1b7267aaa957627. ([`7b99401`](https://github.com/MediWizards/revonto/commit/7b99401a835857f7056f7db57bcb9c025325e302))
+
+* Add ortholog and convert_id (#10)
+
+* from object oriented to functional for some
+
+* fix: typing
+
+* feat: add gOrth orthologand base ortholog class
+
+* intermittent ortholog commit
+
+* feat: add ortholog and convert_id ([`622dd42`](https://github.com/MediWizards/revonto/commit/622dd4273e3a1b56959996f7b1b7267aaa957627))
+
+
 ## v0.1.2 (2023-09-19)
 
 ### Fix
