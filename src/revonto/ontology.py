@@ -144,11 +144,11 @@ class GOTerm(object):
         self.name = name  # description
         self.description = description
         self.namespace = namespace  # BP, CC, MF
-        self._parents: set[str] = set()  # is_a basestring of parents
-        self.parents: set[GOTerm] = set()  # direct parent records
-        self.children: set[GOTerm] = set()  # direct children records
+        self._parents = set()  # is_a basestring of parents
+        self.parents: Set[GOTerm] = set()  # direct parent records
+        self.children: Set[GOTerm] = set()  # direct children records
         self.is_obsolete = is_obsolete  # is_obsolete
-        self.alt_ids: set[str] = set()  # alternative identifiers
+        self.alt_ids = set()  # alternative identifiers
         self.height: Optional[int] = None
         self.depth: Optional[int] = None
 
