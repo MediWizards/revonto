@@ -137,7 +137,7 @@ class GOReverseLookupStudy:
                 population_items
             )  # total number of goterms an objectid (product id) is associated in the whole population set
 
-            pop_n = len(dict_by_term_id)  # total number of goterms in population set
+            pop_n = len(self.obo_dag)  # total number of goterms in population set
 
             one_record = ReverseLookupRecord(
                 object_id,

@@ -11,8 +11,11 @@ from revonto.reverse_lookup import GOReverseLookupStudy, results_intersection
 
 godag = GODag(os.path.join(os.path.dirname(os.path.abspath(__file__)), "go.obo"))
 
-anno = Annotations(
+anno_human = Annotations(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "goa_human.gaf")
+)
+anno_zfin = Annotations(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "zfin.gaf")
 )
 
 # godag defines the population of GOTerms, if you don't intend to use the whole go.obo,
@@ -24,10 +27,15 @@ anno = Annotations(
 
 # anno.match_annotations_to_godag(godag)
 
-# If you would like to include indirect annotaions (from children) propagate them!
-anno.propagate_associations(godag)
+anno_human.convert_ids("ensg", database="gConvert")
 
 # ortholog function will come here and will modify Annotations object
+anno_zfin.find_orthologs("9606", database="gOrth", prune=True)
+
+anno = anno_human + anno_zfin
+
+# If you would like to include indirect annotaions (from children) propagate them!
+# anno.propagate_associations(godag)
 
 # setup the study.
 study = GOReverseLookupStudy(

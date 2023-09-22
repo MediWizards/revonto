@@ -11,6 +11,9 @@ if TYPE_CHECKING:
 import copy
 import os
 
+from .geneinfo import convert_ids as _convert_ids
+from .ortholog import find_orthologs as _find_orthologs
+
 
 class Annotation:
     """
@@ -76,6 +79,12 @@ class Annotations(set[Annotation]):
         super().__init__()
         if file != "":
             self.version, self.date = self.load_assoc_file(file)
+
+    def __add__(self, other):
+        new_anno = Annotations()
+        new_anno.update(self)
+        new_anno.update(other)
+        return new_anno
 
     def load_assoc_file(self, assoc_file):
         """read association file"""
@@ -162,19 +171,69 @@ class Annotations(set[Annotation]):
             if annoobj.taxon:
                 annoobj.object_id = annoobj.object_id + "-" + annoobj.taxon
 
-    def find_orthologs(self, taxon, prune=False) -> None:
+    def find_orthologs(self, taxon: str, database="gOrth", prune=False) -> None:
         """_summary_
 
         Args:
             taxon (_type_): _description_
             prune (bool, optional): _description_. Defaults to False.
-        """        
-        all_object_ids = set()
-        for anno in self:
-            all_object_ids.add(anno.object_id)
-        orthologs_dict = 
+        """
+        if not isinstance(taxon, str):
+            raise TypeError("taxon must be str")
+        # TODO: handle genename-taxon
+        anno_by_taxon = self.dict_from_attr("taxon")
+        for (
+            src_taxon,
+            annos,
+        ) in anno_by_taxon.items():  # perhaps there are multiple taxons in Annotations
+            object_ids = set(a.object_id.split(":", 1)[1] for a in annos)
+            orthologs_dict = _find_orthologs(
+                list(object_ids), src_taxon, taxon, database
+            )
+            for (
+                anno
+            ) in (
+                annos
+            ):  # for each annotation create new ortholog objects, then delete the original
+                obj_id_without_prexix = anno.object_id.split(":", 1)[1]
+                for ortlg in orthologs_dict.get(
+                    obj_id_without_prexix, []
+                ):  # there could be more tha one ortholog
+                    new_anno = anno.copy()
+                    new_anno.object_id = ortlg
+                    new_anno.taxon = taxon
+                    # new_anno.evidence_code = "something" # in future change evidence code to record it was obtained by ortholog search
+                    self.add(new_anno)
+                if prune is True:
+                    self.remove(anno)  # TODO: should this only be done if prune?
 
+    def filter(self, keep_if):
+        """_summary_
 
+        Args:
+            keep_if (_type_): _description_
+        """
+        items_to_delete = [anno for anno in self if not keep_if(anno)]
+        self.difference_update(items_to_delete)
+
+    def convert_ids(self, namespace: str = "ensg", database: str = "gConvert"):
+        anno_by_taxon = self.dict_from_attr("taxon")
+        # TODO: handle genename-taxon
+        for (
+            taxon,
+            annos,
+        ) in anno_by_taxon.items():  # perhaps there are multiple taxons in Annotations
+            object_ids = set(a.object_id.split(":", 1)[1] for a in annos)
+            converted_dict = _convert_ids(list(object_ids), taxon, namespace, database)
+            for anno in annos:
+                obj_id_without_prexix = anno.object_id.split(":", 1)[1]
+                for conv_id in converted_dict.get(obj_id_without_prexix, []):
+                    new_anno = anno.copy()
+                    new_anno.object_id = conv_id
+                    # new_anno.evidence_code = "something" # in future change evidence code to record it was obtained by ortholog search
+                    self.add(new_anno)
+                if converted_dict.get(obj_id_without_prexix):
+                    self.remove(anno)
 
 
 class AnnoParserBase:
@@ -237,7 +296,9 @@ class GafParser(AnnoParserBase):
             rec_curr.NOTrelation = True
         rec_curr.reference = values[5]
         rec_curr.evidence_code = values[6]  # TODO:change to object
-        rec_curr.taxon = values[12][6:]  # remove "taxon" TODO:change to object
+        rec_curr.taxon = values[12].split("|")[0][
+            6:
+        ]  # remove "taxon" TODO:change to object, handle taxon:9606|taxon:1169299
         rec_curr.date = values[13]
 
 
