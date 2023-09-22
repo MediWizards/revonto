@@ -25,6 +25,7 @@ dependencies = [
     "numpy",
     "scipy",
     "statsmodels",
+    "requests",
 ]
 
 version = "0.1.2"

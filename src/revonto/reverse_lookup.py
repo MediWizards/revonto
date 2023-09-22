@@ -1,40 +1,43 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     from .associations import Annotations
     from .ontology import GODag
 
-from .multiple_testing import MultiCorrectionFactory
-from .pvalcalc import PValueFactory
+from .multiple_testing import multiple_correction
+from .pvalcalc import pvalue_calculate
 
 
 class ReverseLookupRecord(object):
     """Represents one result (from a single product) in the ReverseLookupStudy"""
 
-    def __init__(self, objid, **kwargs):
+    def __init__(
+        self,
+        objid,
+        name=None,
+        pvals={},
+        study_items=set(),
+        population_items=set(),
+        ratio_in_study=(0, 0),
+        ratio_in_pop=(0, 0),
+    ):
         self.object_id = objid
-        self.name = "n.a"
-        self.method_flds = []
-        self.kws = kwargs
+        self.name = name
+        self.pvals = pvals
+        self.study_items = study_items
+        self.population_items = population_items
         # Ex: ratio_in_pop ratio_in_study study_items p_uncorrected pop_items
-        for key, val in kwargs.items():
-            setattr(self, key, val)
-        _stucnt = kwargs.get("ratio_in_study", (0, 0))
-        self.study_count = _stucnt[0]
-        self.study_n = _stucnt[1]
-        _popcnt = kwargs.get("ratio_in_pop", (0, 0))
-        self.pop_count = _popcnt[0]
-        self.pop_n = _popcnt[1]
+        self.study_count = ratio_in_study[0]
+        self.study_n = ratio_in_study[1]
+        self.pop_count = ratio_in_pop[0]
+        self.pop_n = ratio_in_pop[1]
 
-    def set_corrected_pval(self, method, pvalue):
-        """Add object attribute based on method name."""
-        method = method.replace("-", "_")
-        self.method_flds.append(method)
-        fieldname = "".join(["p_", method])
-        setattr(self, fieldname, pvalue)
+    def add_pval(self, method, pvalue: float):
+        """Pvalue to dict."""
+        self.pvals[method] = pvalue
 
 
 class GOReverseLookupStudy:
@@ -54,9 +57,11 @@ class GOReverseLookupStudy:
         self.methods = methods
         if methods is None:
             self.methods = ["bonferroni"]  # add statsmodel multipletest
-        self.pval_obj = PValueFactory(pvalcalc).pval_obj
+        self.pval_method = pvalcalc
 
-    def run_study(self, study, **kws) -> List[ReverseLookupRecord]:
+    def run_study(
+        self, studyset: Union[set[str], list[str]], **kws
+    ) -> list[ReverseLookupRecord]:
         """_summary_
 
         Args:
@@ -67,7 +72,7 @@ class GOReverseLookupStudy:
         """
         """Run Gene Ontology Reverse Lookup Study"""
 
-        if len(study) == 0:
+        if len(studyset) == 0:
             return []
 
         # process kwargs
@@ -76,7 +81,7 @@ class GOReverseLookupStudy:
 
         # calculate the uncorrected pvalues using the pvalcalc of choice
         results = self.get_pval_uncorr(
-            study
+            studyset
         )  # results is a list of ReverseLookupRecord objects
         if not results:
             return []
@@ -92,11 +97,13 @@ class GOReverseLookupStudy:
             results = [r for r in results if keep_if(r)]
 
         # Default sort order:
-        # results.sort(key=lambda r: [r.p_uncorrected])
+        # results.sort(key=lambda r: [r.pvals["uncorrected"]])
 
         return results  # list of ReverseLookupRecord objects
 
-    def get_pval_uncorr(self, study) -> List[ReverseLookupRecord]:
+    def get_pval_uncorr(
+        self, studyset: Union[set[str], list[str]]
+    ) -> list[ReverseLookupRecord]:
         """Calculate the uncorrected pvalues for study items."""
         results = []
 
@@ -106,7 +113,7 @@ class GOReverseLookupStudy:
         study2annoobjid = (
             set()
         )  # list of all annotation objects id from goterms in study
-        for term_id in study:
+        for term_id in studyset:
             for annoobj in dict_by_term_id.get(term_id, set()):
                 study2annoobjid.add(annoobj.object_id)
 
@@ -115,27 +122,30 @@ class GOReverseLookupStudy:
             study_items = set(
                 anno_obj.term_id
                 for anno_obj in dict_by_object_id[object_id]
-                if anno_obj.term_id in study
+                if anno_obj.term_id in studyset
             )
             study_count = len(
                 study_items
             )  # for each object id (product id) check how many goterms in study are associated to it
-            study_n = len(study)  # N of study set
+
+            study_n = len(studyset)  # N of study set
 
             population_items = set(
                 anno_obj.term_id for anno_obj in dict_by_object_id[object_id]
             )
-
             pop_count = len(
                 population_items
             )  # total number of goterms an objectid (product id) is associated in the whole population set
-            pop_n = len(dict_by_term_id)  # total number of goterms in population set
+
+            pop_n = len(self.obo_dag)  # total number of goterms in population set
 
             one_record = ReverseLookupRecord(
                 object_id,
-                p_uncorrected=self.pval_obj.calc_pvalue(
-                    study_count, study_n, pop_count, pop_n
-                ),
+                pvals={
+                    "uncorrected": pvalue_calculate(
+                        study_count, study_n, pop_count, pop_n, self.pval_method
+                    )
+                },
                 study_items=study_items,
                 population_items=population_items,
                 ratio_in_study=(study_count, study_n),
@@ -146,30 +156,31 @@ class GOReverseLookupStudy:
 
         return results
 
-    def _run_multitest_corr(self, results, methods, a):
-        pvals = [r.p_uncorrected for r in results]
+    def _run_multitest_corr(
+        self, results: list[ReverseLookupRecord], methods: str, a: float
+    ):
+        pvals = [r.pvals["uncorrected"] for r in results]
         for method in methods:
-            corrected_pvals = MultiCorrectionFactory(method).corr_obj.set_correction(
-                pvals, a
-            )
+            corrected_pvals = multiple_correction(pvals, method, a)
             self._update_pvalcorr(results, method, corrected_pvals)
 
     @staticmethod
-    def _update_pvalcorr(results, method, corrected_pvals):
+    def _update_pvalcorr(
+        results: list[ReverseLookupRecord], method: str, corrected_pvals: list[float]
+    ):
         """Add data members to store multiple test corrections."""
         if corrected_pvals is None:
             return
         for rec, val in zip(results, corrected_pvals):
-            rec.set_corrected_pval(method, val)
+            rec.add_pval(method, val)
 
 
 def results_intersection(
     *lists: list[ReverseLookupRecord],
 ) -> dict[str, list[ReverseLookupRecord]]:
     intersection_dict = defaultdict(list)
-
     # Create a dictionary of object_ids and their occurrences
-    object_id_counts = defaultdict(int)
+    object_id_counts: dict[str, int] = defaultdict(int)
     for lst in lists:
         for record in lst:
             object_id_counts[record.object_id] += 1
