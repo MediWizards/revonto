@@ -1,19 +1,25 @@
 import pytest
 
-from revonto.pvalcalc import pvalue_calculate
+from revonto.pvalcalc import PValueFactory
+
+fisherobj = PValueFactory("fisher_scipy_stats")
+binomialobj = PValueFactory("binomial_scipy_stats")
 
 
-def test_available_pvalue_calculate():
+def test_fisher_example():
     assert (
-        pytest.approx(pvalue_calculate(1, 2, 3, 40, "fisher_scipy_stats"))
-        == 0.1461538461538462
-    )
-    assert (
-        pytest.approx(pvalue_calculate(1, 2, 3, 40, "binomial_scipy_stats"))
-        == 0.1443750
-    )
+        pytest.approx(fisherobj.pval_obj.calc_pvalue(2, 12, 16, 29), rel=1e-6)
+        == 0.0007206922
+    )  # round the fisher exact score to a reasonable amount
 
 
-def test_pvalue_calculate_exception():
+def test_fisher_exception():
     with pytest.raises(ValueError):
-        pvalue_calculate(1, 1, 1, 1, "notamethod")
+        fisherobj.pval_obj.calc_pvalue(2, 10, 1, 20)  # c will be -1
+
+
+def test_binomial_example():
+    assert (
+        pytest.approx(binomialobj.pval_obj.calc_pvalue(2, 12, 16, 29), rel=1e-6)
+        == 0.00841718
+    )
