@@ -2,6 +2,17 @@
 
 
 
+## v0.2.1 (2023-10-01)
+
+### Fix
+
+* fix: add greater alternative to fisher (#13)
+
+* fix: fisher greater alternative
+
+* fix: only preform pvalcalc if study_count&gt;0 ([`67a785b`](https://github.com/MediWizards/revonto/commit/67a785b6a8e2e7591af5aa79fde3598f55ca7f1b))
+
+
 ## v0.2.0 (2023-09-22)
 
 ### Feature
