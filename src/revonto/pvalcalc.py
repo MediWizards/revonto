@@ -19,7 +19,7 @@ def fisherscipystats(study_count, study_n, pop_count, pop_n) -> float:
     cvar = pop_count - study_count
     dvar = pop_n - pop_count - bvar
 
-    _, pval = stats.fisher_exact([[avar, bvar], [cvar, dvar]])
+    _, pval = stats.fisher_exact([[avar, bvar], [cvar, dvar]], alternative="greater")
 
     return pval
 
