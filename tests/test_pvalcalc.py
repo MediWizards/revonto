@@ -17,3 +17,11 @@ def test_available_pvalue_calculate():
 def test_pvalue_calculate_exception():
     with pytest.raises(ValueError):
         pvalue_calculate(1, 1, 1, 1, "notamethod")
+
+def test_greater_alternative_fisher_scipy():
+    pvals = []
+    for i in [0, 1, 2, 5, 10, 20]:
+        pvalue = pvalue_calculate(i, 20, 100, 1000, "fisher_scipy_stats")
+        print(pvalue)
+        pvals.append(pvalue)
+    assert all(pvals[i] < pvals[i-1] for i in range(1,len(pvals)))
