@@ -123,11 +123,10 @@ def test_propagate_associations(annotations_test: Annotations, godag_test: GODag
 
 
 def test_dict_from_attr():
-    annoset = Annotations()
     anno1 = Annotation(object_id="ABC1", term_id="GO:1234")
     anno2 = Annotation(object_id="ABC2", term_id="GO:1234")
     anno3 = Annotation(object_id="ABC2", term_id="GO:5678")
-    annoset.update([anno1, anno2, anno3])
+    annoset = Annotations([anno1, anno2, anno3])
 
     dict_by_term_id = annoset.dict_from_attr("term_id")
     assert len(dict_by_term_id) == 2
@@ -138,18 +137,14 @@ def test_dict_from_attr():
     assert len(dict_by_object_id["ABC2"]) == 2
 
 
-@pytest.mark.skip
 def test_annotation_set_operations():
     anno1 = Annotation(object_id="ABC1", term_id="GO:1234")
     anno2 = Annotation(object_id="ABC2", term_id="GO:1234")
     anno3 = Annotation(object_id="ABC2", term_id="GO:5678")
 
-    annoset1 = Annotations()
-    annoset1.add(anno1)
-    annoset2 = Annotations()
-    annoset2.add(anno2)
-    annoset3 = Annotations()
-    annoset3.add(anno3)
+    annoset1 = Annotations([anno1])
+    annoset2 = Annotations([anno2])
+    annoset3 = Annotations([anno3])
 
     assert annoset1.union(annoset2) == annoset2.union(
         annoset1
@@ -163,10 +158,12 @@ def test_annotation_set_operations():
 
     assert annoset1.intersection(annoset1.union(annoset2)) == annoset1
 
+    with pytest.raises(TypeError):
+        annoset1.union({"a", "b"})
+
 
 def test_match_annotations_to_godag():
-    annoset = Annotations()
-    annoset.update(
+    annoset = Annotations(
         [
             Annotation(object_id="ABC1", term_id="GO:1234"),
             Annotation(object_id="ABC2", term_id="GO:1234"),
@@ -184,8 +181,7 @@ def test_match_annotations_to_godag():
 
 
 def test_add_taxon_to_object_id():
-    annoset = Annotations()
-    annoset.update(
+    annoset = Annotations(
         [
             Annotation(object_id="ABC1", term_id="GO:1234", taxon="9606"),
             Annotation(object_id="ABC2", term_id="GO:1234"),
@@ -198,7 +194,6 @@ def test_add_taxon_to_object_id():
 
 
 def test_find_orthologs_gOrth():
-    annoset = Annotations()
     anno1 = Annotation(
         object_id="ZFIN:ZDB-GENE-040912-6", term_id="GO:1234", taxon="7955"
     )  # returns multiple
@@ -211,7 +206,7 @@ def test_find_orthologs_gOrth():
     anno3 = Annotation(
         object_id="ZFIN:ZDB-GENE-021119-1", term_id="GO:5678", taxon="7955"
     )  # returns two, but one N/A
-    annoset.update([anno1, anno2, anno2_n, anno3])
+    annoset = Annotations([anno1, anno2, anno2_n, anno3])
 
     annoset.find_orthologs(taxon="9606", database="gOrth", prune=True)
 
@@ -229,8 +224,7 @@ def test_find_orthologs_gOrth():
 
 
 def test_filter():
-    annoset = Annotations()
-    annoset.update(
+    annoset = Annotations(
         [
             Annotation(object_id="ABC1", term_id="GO:1234", taxon="9606"),
             Annotation(object_id="ABC2", term_id="GO:1234"),
@@ -242,7 +236,6 @@ def test_filter():
 
 
 def test_convert_ids_gConvert():
-    annoset = Annotations()
     anno1 = Annotation(
         object_id="ZFIN:ZDB-GENE-040912-6", term_id="GO:1234", taxon="7955"
     )  # returns multiple
@@ -255,7 +248,7 @@ def test_convert_ids_gConvert():
     anno3 = Annotation(
         object_id="ZFIN:ZDB-GENE-021119-1", term_id="GO:5678", taxon="7955"
     )  # returns two, but one N/A
-    annoset.update([anno1, anno2, anno2_n, anno3])
+    annoset = Annotations([anno1, anno2, anno2_n, anno3])
 
     annoset.convert_ids(namespace="ensg", database="gConvert")
 

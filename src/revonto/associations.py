@@ -3,7 +3,7 @@ Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
 
-from typing import TYPE_CHECKING, Any, Generator, Optional
+from typing import TYPE_CHECKING, Any, Generator, Optional, Iterable
 
 if TYPE_CHECKING:
     from .ontology import GODag
@@ -75,32 +75,60 @@ class Annotation:
 class Annotations(set[Annotation]):
     """Store annotations as a set of Annotation objects"""
 
-    def __init__(self, file: str = ""):
-        super().__init__()
-        if file != "":
-            self.version, self.date = self.load_assoc_file(file)
+    def __init__(self, annotations: Optional[Iterable[Annotation]] = None):
+        super().__init__(annotations) if annotations is not None else super().__init__()
 
-    def __add__(self, other):
-        new_anno = Annotations()
-        new_anno.update(self)
-        new_anno.update(other)
-        return new_anno
-
-    def load_assoc_file(self, assoc_file):
+    @classmethod
+    def from_file(cls, file):
         """read association file"""
 
-        extension = os.path.splitext(assoc_file)[1]
+        extension = os.path.splitext(file)[1]
         if extension == ".gaf":
-            reader = GafParser(assoc_file)
+            reader = GafParser(file)
         elif extension == ".gpad":
             raise NotImplementedError("GPAD files are not yet supported")
         else:
             raise NotImplementedError(f"{extension} files are not yet supported")
+        
+        instance = cls(reader)
+        instance.version = reader.version
+        instance.date = reader.date
 
-        for rec in reader:
-            self.add(rec)
+        return instance
 
-        return reader.version, reader.date
+    def __add__(self, other):
+        new_anno = Annotations(self)
+        new_anno.update(other)
+        return new_anno
+
+    def copy(self):
+        # Create a new Annotations instance with a shallow copy of the elements
+        return Annotations(super().copy())
+    
+    def union(self, *others):
+        # Check if all 'others' are instances of Annotations
+        if not all(isinstance(other, Annotations) for other in others):
+            raise TypeError("All 'others' must be instances of Annotations")
+
+        # Perform the set union operation and create a new Annotations instance
+        return Annotations(super().union(*others))
+    
+    def intersection(self, *others):
+        # Check if all 'others' are instances of Annotations
+        if not all(isinstance(other, Annotations) for other in others):
+            raise TypeError("All 'others' must be instances of Annotations")
+
+        # Perform the set intersection operation and create a new Annotations instance
+        return Annotations(super().intersection(*others))
+
+    def difference(self, *others):
+        # Check if all 'others' are instances of Annotations
+        if not all(isinstance(other, Annotations) for other in others):
+            raise TypeError("All 'others' must be instances of Annotations")
+
+        # Perform the set difference operation and create a new Annotations instance
+        return Annotations(super().difference(*others))
+    
 
     def dict_from_attr(self, attribute: str) -> dict[str, set[Annotation]]:
         """groups annotations by attribute and store it in dictionary.
@@ -309,7 +337,7 @@ class EvidenceCodes:
     currently not used
     """
 
-    codes = {}
+    codes: dict = {}
 
     def __init__(self, code) -> None:
         if code not in self.codes:
