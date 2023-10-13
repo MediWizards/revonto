@@ -3,7 +3,7 @@ Read and store Gene Ontology's GAF (GO Annotation File).
 """
 from __future__ import annotations as an
 
-from typing import TYPE_CHECKING, Any, Generator, Optional, Iterable
+from typing import TYPE_CHECKING, Any, Generator, Iterable, Optional
 
 if TYPE_CHECKING:
     from .ontology import GODag
@@ -89,7 +89,7 @@ class Annotations(set[Annotation]):
             raise NotImplementedError("GPAD files are not yet supported")
         else:
             raise NotImplementedError(f"{extension} files are not yet supported")
-        
+
         instance = cls(reader)
         instance.version = reader.version
         instance.date = reader.date
@@ -104,7 +104,7 @@ class Annotations(set[Annotation]):
     def copy(self):
         # Create a new Annotations instance with a shallow copy of the elements
         return Annotations(super().copy())
-    
+
     def union(self, *others):
         # Check if all 'others' are instances of Annotations
         if not all(isinstance(other, Annotations) for other in others):
@@ -112,7 +112,7 @@ class Annotations(set[Annotation]):
 
         # Perform the set union operation and create a new Annotations instance
         return Annotations(super().union(*others))
-    
+
     def intersection(self, *others):
         # Check if all 'others' are instances of Annotations
         if not all(isinstance(other, Annotations) for other in others):
@@ -128,7 +128,6 @@ class Annotations(set[Annotation]):
 
         # Perform the set difference operation and create a new Annotations instance
         return Annotations(super().difference(*others))
-    
 
     def dict_from_attr(self, attribute: str) -> dict[str, set[Annotation]]:
         """groups annotations by attribute and store it in dictionary.

@@ -15,6 +15,6 @@ def annotations_test():
 
 @pytest.fixture
 def godag_test():
-    return GODag(
+    return GODag.from_file(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "data/go1.obo")
     )
