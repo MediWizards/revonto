@@ -2,6 +2,22 @@
 
 
 
+## v0.3.0 (2023-10-13)
+
+### Feature
+
+* feat: change to classmethods for Annotations and GODag (#14)
+
+* feat: add classmethod to
+Annotations and add set operations
+
+* feat: add classmethod to GODag, tests to pytest
+
+* fix: use new classmethods in example
+
+* fix: test_reverse_lookup wrong p ([`6e17860`](https://github.com/MediWizards/revonto/commit/6e17860be5258fa02fe4751c63358b4c63a81979))
+
+
 ## v0.2.1 (2023-10-01)
 
 ### Fix
