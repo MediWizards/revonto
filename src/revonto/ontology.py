@@ -186,42 +186,35 @@ class GOTerm(object):
 class GODag(dict[str, GOTerm]):
     """Holds the GO DAG as a dict."""
 
-    # pylint: disable=line-too-long
-    def __init__(
-        self,
-        obo_file="",
-        load_obsolete=False,
-    ):
-        super().__init__()
-        if obo_file != "":
-            self.version, self.data_version = self.load_obo_file(
-                obo_file, load_obsolete
-            )
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
-    def load_obo_file(self, obo_file, load_obsolete):
+    @classmethod
+    def from_file(cls, file, load_obsolete=False):
         """Read obo file. Store results."""
-        reader = OBOReader(obo_file)
+        reader = OBOReader(file)
 
-        # Save alt_ids and their corresponding main GO ID. Add to GODag after populating GO Terms
-        alt2rec = {}
+        instance = cls()
+        # TODO: Save alt_ids and their corresponding main GO ID. Add to GODag after populating GO Terms
         for rec in reader:
             # Save record if:
             #   1) Argument load_obsolete is True OR
             #   2) Argument load_obsolete is False and the GO term is "live" (not obsolete)
             if load_obsolete or not rec.is_obsolete:
-                self[rec.term_id] = rec
-                for alt in rec.alt_ids:
-                    alt2rec[alt] = rec
+                instance[rec.term_id] = rec
 
-        self._populate_terms()
-        self._set_height_depth()
+        instance._populate_terms()
+        instance._set_height_depth()
 
-        # Add alt_ids to go2obj
-        for goid_alt, rec in alt2rec.items():
-            self[goid_alt] = rec
-        desc = self._str_desc(reader)
+        # TODO: Add alt_ids to go2obj
+        # for goid_alt, rec in alt2rec.items():
+        #    self[goid_alt] = rec
+        desc = instance._str_desc(reader)
 
-        return desc, reader.data_version
+        instance.version = desc
+        instance.data_version = reader.data_version
+
+        return instance
 
     def _str_desc(self, reader):
         """String containing information about the current GO DAG."""
@@ -278,40 +271,3 @@ class GODag(dict[str, GOTerm]):
     def id2int(go_id):
         """Given a GO ID, return the int value."""
         return int(go_id.replace("GO:", "", 1))
-
-    def query_term(self, term, verbose=False):
-        """Given a GO ID, return GO object."""
-        if term not in self:
-            # logging
-            return None
-
-        rec = self[term]
-        if verbose:
-            print(rec)
-            # logging
-            # stderr.write("all parents: {}\n".format(repr(rec.get_all_parents())))
-            # stderr.write("all children: {}\n".format(repr(rec.get_all_children())))
-        return rec
-
-    def update_association(self, association):
-        """Add the GO parents of a gene's associated GO IDs to the gene's association."""
-        bad_goids = set()
-        # Loop through all sets of GO IDs for all genes
-        for goids in association.values():
-            parents = set()
-            # Iterate thru each GO ID in the current gene's association
-            for goid in goids:
-                try:
-                    parents.update(self[goid].get_all_parents())
-                except Exception:
-                    bad_goids.add(goid.strip())
-            # Add the GO parents of all GO IDs in the current gene's association
-            goids.update(parents)
-        if bad_goids:
-            return None  # remove
-            # logging
-            # stdout.write(
-            #    "{N} GO IDs in assc. are not found in the GO-DAG: {GOs}\n".format(
-            #        N=len(bad_goids), GOs=" ".join(bad_goids)
-            #    )
-            # )
